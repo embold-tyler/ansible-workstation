@@ -1,0 +1,243 @@
+---
+# Fedora package names below were verified against live Fedora 44 repos.
+# Ubuntu names are best-effort and untested — see README.
+
+user_name: "{{ lookup('env', 'USER') }}"
+user_home: "{{ lookup('env', 'HOME') }}"
+
+dotfiles_repo: "git@github.com:embold-tyler/dotfiles.git"
+coder_url: "https://coder.embold.dev"
+
+# --- Base CLI -----------------------------------------------------------
+packages_base_fedora:
+  - 7zip
+  - bat
+  - btop
+  - chezmoi
+  - curl
+  - direnv
+  - eza
+  - fastfetch
+  - fd-find
+  - fzf
+  - git
+  - git-delta
+  - htop
+  - jq
+  - just
+  - openvpn
+  - pandoc-cli
+  - ripgrep
+  - tealdeer
+  - tmux
+  - util-linux
+  - vim-enhanced
+  - wget2-wget
+  - wl-clipboard
+  - xclip
+  - zoxide
+  - zsh
+
+packages_base_ubuntu:
+  - bat
+  - btop
+  - curl
+  - direnv
+  - eza
+  - fastfetch
+  - fd-find
+  - fzf
+  - git
+  - git-delta
+  - htop
+  - jq
+  - just
+  - openvpn
+  - p7zip-full
+  - pandoc
+  - ripgrep
+  - tealdeer
+  - tmux
+  - vim
+  - wget
+  - wl-clipboard
+  - xclip
+  - zoxide
+  - zsh
+
+# --- Development --------------------------------------------------------
+packages_dev_fedora:
+  - code
+  - composer
+  - gh
+  - golang
+  - lazygit
+  - php
+  - php-cli
+  - podman
+  - podman-docker
+  - python3
+  - python3-pip
+  - shfmt
+
+packages_dev_ubuntu:
+  - code
+  - composer
+  - gh
+  - golang
+  - php
+  - php-cli
+  - podman
+  - python3
+  - python3-pip
+  - shfmt
+
+# --- Desktop / GUI ------------------------------------------------------
+# Policy: prefer an RPM over a flatpak whenever the vendor ships one. The
+# flatpak builds of Chrome and 1Password installed from GNOME Software came
+# up sandboxed with too little filesystem access (no ~/.local/share
+# integration, no browser<->1Password native messaging).
+packages_desktop_fedora:
+  - 1password
+  - 1password-cli
+  - adw-gtk3-theme
+  - cloudflare-warp
+  - gimp
+  - gnome-shell-extension-appindicator
+  - gnome-shell-extension-gsconnect
+  - gnome-tweaks
+  - google-chrome-stable
+  - nautilus-open-any-terminal
+  - openssh-askpass     # GUI sudo/ssh prompts when there is no tty
+  - playerctl
+  - seahorse
+  - xdg-terminal-exec
+
+# Chrome and 1Password are RPMs (see packages_desktop_fedora).
+packages_flatpak:
+  - com.github.huluti.Curtail
+  - com.mattjakeman.ExtensionManager
+  - com.slack.Slack
+  - fr.handbrake.ghb
+  - io.beekeeperstudio.Studio
+  - io.github.seadve.Kooha
+  - org.filezillaproject.Filezilla
+  - org.gnome.Extensions
+  - org.libreoffice.LibreOffice
+  - org.mozilla.Thunderbird
+  - org.videolan.VLC
+  - net.martichou.rquickshare
+
+nerd_font_version: "v3.3.0"
+nerd_font_name: "FiraCode"
+
+# Screaming Frog publishes no "latest" URL, so this is pinned. Bump it from
+# https://www.screamingfrog.co.uk/seo-spider/ when a new release lands.
+screamingfrog_version: "24.3-1"
+
+# --- Terminal -----------------------------------------------------------
+# Tabby ships no repo, so it comes from its GitHub release (see desktop role).
+# Its config.yaml is chezmoi-managed in the dotfiles repo, not templated here.
+terminal_desktop_id: "tabby.desktop"
+terminal_exec: "/opt/Tabby/tabby"
+
+# --- Launcher -----------------------------------------------------------
+vicinae_version: "0.29.0"
+vicinae_appimage_url: "https://github.com/vicinaehq/vicinae/releases/download/v{{ vicinae_version }}/Vicinae-x86_64.AppImage"
+vicinae_bin: "{{ user_home }}/.local/bin/vicinae"
+
+# --- Dock ----------------------------------------------------------------
+# Pin order as set on the desktop.
+#   Edit this list (not gsettings) to change it so a reprovision 
+#   doesn't drift from what's actually pinned.
+gnome_favorite_apps:
+  - chrome-leeejohakkcbkkheiafmfbofpjbndial-Profile_1.desktop # Gemini (Personal)
+  - org.gnome.Nautilus.desktop                                # File Explorer
+  - tabby.desktop                                             # Terminal
+  - org.mozilla.firefox.desktop
+  - google-chrome.desktop
+  - chrome-edcmabgkbicempmpgmniellhbjopafjh-Default.desktop   # ClickUp
+  - chrome-fmgjjmmmlfnkbppncabfkddbjimcfncm-Default.desktop   # Gmail
+  - com.slack.Slack.desktop
+  - code.desktop
+  - lmstudio.desktop                                          # no Windows-pin equivalent
+  - chrome-clemfcbpkjopdkjjhngceifmohieaohc-Default.desktop   # Cacher
+  - chrome-mddodbaoefbkelilmddpkgpoaijmpnhm-Default.desktop   # Harvest
+  - chrome-ldldfhjmhpbcocmgdlgnogfikahpblog-Default.desktop   # Figma
+  - chrome-fklnhlgfamfeknafaldenkmoeccpkmmf-Default.desktop   # Squoosh
+  - google-chrome-personal.desktop                            # Chrome (Personal)
+  - chrome-hpfldicfbfomlpcikngkocigghgafkph-Profile_1.desktop # Messages
+  - chrome-cinhimbnkkaeohfgghhklpknlkffjgod-Profile_1.desktop # YouTube Music
+  - com.cloudflare.WarpTaskbar.desktop
+  - org.gnome.Calendar.desktop                                # no Windows-pin equivalent kept
+  - com.onepassword.OnePassword.desktop                       # no Windows-pin equivalent
+  - chrome-cmgiilnmnfechkeifkepembegeckngog-Profile_1.desktop # ntfy, no Windows-pin equivalent
+  - org.gnome.Software.desktop                                # no Windows-pin equivalent
+
+# --- GNOME extensions ---------------------------------------------------
+# All from extensions.gnome.org, so every extension lands in one place
+# (~/.local/share/gnome-shell/extensions) with one update path. Fedora does
+# package Caffeine, but the RPM installs system-wide and would shadow/duplicate
+# a user copy. `tag` is the EGO version_tag for the GNOME 50 build.
+# Emoji Selector (1162) is deliberately absent: it stops at GNOME 43.
+gnome_extensions_ego:
+  - { name: 'Night Theme Switcher', uuid: 'nightthemeswitcher@romainvigier.fr', tag: 76543 }
+  - { name: 'Caffeine',                          uuid: 'caffeine@patapon.info',         tag: 69851 }
+  - { name: 'Emoji Copy',                        uuid: 'emoji-copy@felipeftn',          tag: 74180 }
+  - { name: 'Native Screenshot UI OCR Extended', uuid: 'ocr-to-clipboard@oreocapybara', tag: 72660 }
+  # Required for Vicinae's clipboard history
+  - { name: 'Vicinae (clipboard bridge)',        uuid: 'vicinae@dagimg-dot',            tag: 74338 }
+
+gnome_extensions_enable:
+  - nightthemeswitcher@romainvigier.fr
+  - caffeine@patapon.info
+  - emoji-copy@felipeftn
+  - ocr-to-clipboard@oreocapybara
+  - vicinae@dagimg-dot
+
+# --- Keyboard shortcuts -------------------------------------------------
+# Conflicts cleared first, then assignments. Every "free" entry below was a
+# real collision found on this machine.
+gnome_keybinding_conflicts:
+  # Super+V was the message tray; keep Super+M for that.
+  - { schema: 'org.gnome.shell.keybindings',          key: 'toggle-message-tray', value: "['<Super>m']" }
+  # Super+Tab cycled windows of one app; move that to the usual Super+grave.
+  - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-group',        value: "['<Super>grave']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-group-backward', value: "['<Shift><Super>grave']" }
+  # ibus owns Super+period for emoji; hand it to Emoji Copy instead.
+  - { schema: 'org.freedesktop.ibus.panel.emoji',     key: 'hotkey',              value: "[]" }
+  # Only one keyboard layout here, so Super+space is free for the launcher.
+  - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-input-source', value: "[]" }
+  - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-input-source-backward', value: "[]" }
+
+gnome_keybindings:
+  # Windows-like: Alt+Tab = applications, Super+Tab = individual windows.
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-applications',          value: "['<Alt>Tab']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-applications-backward', value: "['<Shift><Alt>Tab']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-windows',               value: "['<Super>Tab']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-windows-backward',      value: "['<Shift><Super>Tab']" }
+
+# Extension schemas are NOT on the default gsettings path, so each needs
+# --schemadir pointing at its own extension directory. Without it these
+# silently do nothing.
+gnome_extension_settings:
+  - { uuid: 'emoji-copy@felipeftn',          schema: 'org.gnome.shell.extensions.emoji-copy',       key: 'emoji-keybind',        value: "['<Super>period']" }
+  - { uuid: 'emoji-copy@felipeftn',          schema: 'org.gnome.shell.extensions.emoji-copy',       key: 'window-location',      value: "'cursor'" }
+  - { uuid: 'emoji-copy@felipeftn',          schema: 'org.gnome.shell.extensions.emoji-copy',       key: 'active-keybind',       value: "true" }
+  - { uuid: 'ocr-to-clipboard@oreocapybara', schema: 'org.gnome.shell.extensions.ocr-to-clipboard', key: 'capture-ocr-shortcut', value: "['<Super><Shift>o']" }
+  - { uuid: 'caffeine@patapon.info',         schema: 'org.gnome.shell.extensions.caffeine',         key: 'toggle-shortcut',      value: "['<Super><Shift>k']" }
+
+# Custom keybindings (name / command / binding).
+gnome_custom_keybindings:
+  - { name: 'Vicinae launcher',           command: "{{ user_home }}/.local/bin/vicinae toggle",                          binding: '<Super>space' }
+  - { name: 'Vicinae clipboard history',  command: "{{ user_home }}/.local/bin/vicinae cmd launch clipboard:history",    binding: '<Super>v' }
+  - { name: 'Toggle light/dark',          command: "{{ user_home }}/.local/bin/toggle-color-scheme",                     binding: '<Super><Shift>d' }
+  - { name: 'Colour picker',              command: 'gcolor3',                                                            binding: '<Super><Shift>c' }
+
+# --- Disk encryption ----------------------------------------------------
+# PCR 7 only: PCR 0 measures firmware, so a BIOS update would invalidate the
+# TPM2 binding and force a re-enrolment on every firmware update.
+luks_tpm2_pcrs: "7"
+
+# --- Face unlock --------------------------------------------------------
+howdy_copr: "principis/howdy"

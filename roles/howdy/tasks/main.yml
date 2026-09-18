@@ -1,0 +1,120 @@
+---
+# Face unlock via Howdy, using the IR camera in a Windows Hello webcam
+# (Logitech Brio 4K). Everything here is a no-op until an IR camera is present,
+# so it is safe to run before the hardware arrives.
+#
+# Howdy authenticates but never yields a password, so — like the fingerprint
+# reader — it does NOT unlock gnome-keyring. Disk encryption plus a blank
+# keyring password is what makes the keyring prompt go away.
+
+- name: Detect an IR camera
+  ansible.builtin.shell: |
+    set -o pipefail
+    v4l2-ctl --list-devices 2>/dev/null \
+      | grep -iE -A3 'IR|Infrared|RealSense|Brio' \
+      | grep -oE '/dev/video[0-9]+' | head -n1
+  args:
+    executable: /bin/bash
+  register: ir_probe
+  changed_when: false
+  failed_when: false
+
+- name: Record the IR camera device
+  ansible.builtin.set_fact:
+    ir_camera_device: "{{ ir_probe.stdout | trim }}"
+
+- name: Report when no IR camera is attached
+  ansible.builtin.debug:
+    msg: >-
+      No IR camera found, so Howdy was not configured. Plug in the Brio and
+      re-run: ansible-playbook playbook.yml --ask-become-pass --tags howdy
+  when: ir_camera_device | length == 0
+
+- name: Configure Howdy
+  when: ir_camera_device | length > 0
+  become: true
+  block:
+    - name: Enable the Howdy COPR
+      ansible.builtin.command: dnf -y copr enable {{ howdy_copr }}
+      args:
+        creates: "/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:{{ howdy_copr | replace('/', ':') }}.repo"
+
+    - name: Install Howdy
+      ansible.builtin.dnf:
+        name:
+          - howdy
+          - v4l-utils
+        state: present
+
+    - name: Point Howdy at the IR camera
+      ansible.builtin.lineinfile:
+        path: /etc/howdy/config.ini
+        regexp: '^\s*device_path\s*='
+        line: "device_path = {{ ir_camera_device }}"
+
+    # Ordering matters: pam_howdy must come BEFORE the password module so a
+    # face match short-circuits the prompt; after it, it never runs.
+    - name: Enable Howdy in PAM
+      ansible.builtin.lineinfile:
+        path: "{{ item.file }}"
+        insertbefore: "{{ item.before }}"
+        line: "{{ item.line }}"
+        firstmatch: true
+      loop:
+        - file: /etc/pam.d/sudo
+          before: '^auth\s+include\s+system-auth'
+          line: 'auth       sufficient   pam_howdy.so'
+        - file: /etc/pam.d/gdm-password
+          before: '^auth\s+substack\s+password-auth'
+          line: 'auth        sufficient    pam_howdy.so'
+      loop_control:
+        label: "{{ item.file }}"
+
+    # GDM runs confined; without this it cannot mmap the V4L2 device and face
+    # unlock silently fails at the login screen while working fine for sudo.
+    - name: Install the SELinux policy for Howdy under GDM
+      ansible.builtin.copy:
+        dest: /etc/selinux/howdy_gdm.te
+        mode: '0644'
+        content: |
+          module howdy_gdm 1.0;
+          require {
+              type xdm_t;
+              type v4l_device_t;
+              class chr_file map;
+          }
+          allow xdm_t v4l_device_t:chr_file map;
+      register: howdy_te
+
+    - name: Build and load the SELinux policy
+      ansible.builtin.shell: |
+        set -e
+        cd /etc/selinux
+        checkmodule -M -m -o howdy_gdm.mod howdy_gdm.te
+        semodule_package -o howdy_gdm.pp -m howdy_gdm.mod
+        semodule -i howdy_gdm.pp
+      when: howdy_te.changed
+
+# --- IR emitter ---------------------------------------------------------
+# Many Windows Hello cameras keep their IR illuminator off until told
+# otherwise, which makes Howdy work in daylight and fail in the dark.
+- name: Look up linux-enable-ir-emitter
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/EmixamPP/linux-enable-ir-emitter/releases/latest
+    return_content: true
+  register: ir_release
+  changed_when: false
+  failed_when: false
+  when: ir_camera_device | length > 0
+
+- name: Install linux-enable-ir-emitter
+  become: true
+  ansible.builtin.unarchive:
+    src: "{{ (ir_release.json.assets | map(attribute='browser_download_url') | select('search', 'systemd.x86-64.tar.gz$') | first) }}"
+    dest: /
+    remote_src: true
+    extra_opts: ['--no-same-owner', '-m']
+    creates: /usr/bin/linux-enable-ir-emitter
+  when:
+    - ir_camera_device | length > 0
+    - ir_release.status | default(0) == 200

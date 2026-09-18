@@ -1,0 +1,7 @@
+# ELAN ELAN:Fingerprint (04f3:0c11).
+#
+# usbcore autosuspends after 2s. The sensor then sleeps between enrollment
+# touches and libfprint's next transfer never lands, so enrollment dies with
+# "Device reported an error during enroll: transfer timed out" and GNOME shows
+# "Failed to enroll new fingerprint". Keep the sensor powered.
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="04f3", ATTR{idProduct}=="0c11", TEST=="power/control", ATTR{power/control}="on"

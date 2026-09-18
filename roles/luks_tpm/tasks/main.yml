@@ -1,0 +1,62 @@
+---
+# Enrols the TPM2 as an unlock key for existing LUKS volumes.
+#
+# This CANNOT encrypt anything. systemd-cryptenroll only adds a key slot to a
+# volume that is already LUKS. With no crypto_LUKS device present every task
+# here skips, which is the correct no-op on an unencrypted disk.
+#
+# PCR choice: the gotylergo playbook this came from used `--tpm2-pcrs=0+7`.
+# PCR 0 measures the firmware, so a BIOS update changes it and the TPM stops
+# releasing the key — you fall back to the passphrase and must re-enrol. PCR 7
+# (secure-boot policy state) survives firmware updates, which is the whole
+# point of wanting this unattended, so 7 is the default here.
+
+- name: Find LUKS volumes
+  ansible.builtin.command: lsblk -plno NAME,FSTYPE
+  register: luks_scan
+  changed_when: false
+
+- name: Set LUKS volume list
+  ansible.builtin.set_fact:
+    luks_volumes: >-
+      {{ luks_scan.stdout_lines | select('search', 'crypto_LUKS')
+         | map('regex_replace', '^(\S+).*$', '\1') | list }}
+
+- name: Report when there is nothing to enrol
+  ansible.builtin.debug:
+    msg: >-
+      No LUKS volumes found, so TPM2 enrolment was skipped. This role adds a
+      TPM2 key slot to an existing encrypted volume; it does not encrypt a
+      disk. To encrypt an existing root filesystem you must either run
+      `cryptsetup reencrypt --encrypt` from live media, or reinstall.
+  when: luks_volumes | length == 0
+
+- name: Enrol the TPM2
+  when: luks_volumes | length > 0
+  become: true
+  block:
+    - name: Check for an existing TPM2 keyslot
+      ansible.builtin.command: "cryptsetup luksDump {{ item }}"
+      loop: "{{ luks_volumes }}"
+      register: luks_dump
+      changed_when: false
+
+    - name: Enrol TPM2 against PCR 7
+      ansible.builtin.command: >-
+        systemd-cryptenroll --tpm2-device=auto
+        --tpm2-pcrs={{ luks_tpm2_pcrs }} {{ item.item }}
+      loop: "{{ luks_dump.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: "'systemd-tpm2' not in item.stdout"
+
+    - name: Point crypttab at the TPM
+      ansible.builtin.replace:
+        path: /etc/crypttab
+        regexp: '^(.*)\bnone\b(.*)$'
+        replace: '\1tpm2-device=auto\2'
+      register: crypttab_tpm
+
+    - name: Rebuild the initramfs
+      ansible.builtin.command: dracut --force
+      when: crypttab_tpm.changed

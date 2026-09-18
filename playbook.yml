@@ -1,0 +1,68 @@
+---
+- name: Configure Linux Workstation (Fedora primary, Ubuntu best-effort)
+  hosts: localhost
+  connection: local
+  become: true
+
+  pre_tasks:
+    - name: Fail early on unsupported OS family
+      ansible.builtin.assert:
+        that: ansible_facts['os_family'] in ['RedHat', 'Debian']
+        fail_msg: "Only RedHat (Fedora) and Debian (Ubuntu) families are supported."
+
+    - name: Speed up dnf (Fedora)
+      ansible.builtin.lineinfile:
+        path: /etc/dnf/dnf.conf
+        regexp: '^max_parallel_downloads='
+        line: 'max_parallel_downloads=10'
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Ensure flatpak is installed
+      ansible.builtin.package:
+        name: flatpak
+        state: present
+
+    - name: Add Flathub repository
+      community.general.flatpak_remote:
+        name: flathub
+        state: present
+        flatpakrepo_url: https://flathub.org/repo/flathub.flatpakrepo
+
+  roles:
+    - role: repos
+      tags: ['repos']
+    - role: common
+      tags: ['base', 'common']
+    - role: hardware
+      tags: ['hardware']
+    - role: desktop
+      tags: ['apps', 'desktop']
+    - role: development
+      tags: ['dev', 'development']
+    - role: luks_tpm
+      tags: ['luks', 'encryption']
+    - role: howdy
+      tags: ['howdy', 'biometrics']
+    - role: gnome
+      tags: ['gnome', 'desktop']
+      become: false
+    - role: dotfiles
+      tags: ['dotfiles']
+      become: false
+
+  post_tasks:
+    - name: Manual follow-up steps
+      ansible.builtin.debug:
+        msg:
+          - "Provisioning complete."
+          - "1. Log out/in (or reboot) so the zsh shell change and nvidia kmod take effect."
+          - "2. Enroll fingerprint as your normal user (NOT sudo):  fprintd-enroll"
+          - "3. Sign in to 1Password, then:  op plugin init gh"
+          - "4. Authenticate Coder:  coder login https://coder.embold.dev"
+          - "5. Re-install your Chrome web apps (Figma included) from inside"
+          - "   Chrome (three-dot menu > Cast, save and share > Install page"
+          - "   as app)."
+          - "6. Log out and back in: new GNOME extensions and the SSH agent"
+          - "   change only take effect in a fresh session."
+          - "7. Install Vicinae extensions from the checklist in README.md"
+          - "   (Launcher > Extensions) - no CLI for this exists yet."

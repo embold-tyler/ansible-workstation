@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=Tabby
+GenericName=Terminal
+Comment=A terminal for a modern age
+# Keywords so Tabby is found by searching "terminal" / "console" / "shell"
+# in the GNOME app grid, which it otherwise is not.
+Keywords=terminal;console;shell;prompt;command line;cli;tty;
+Exec=/opt/Tabby/tabby --no-sandbox --enable-features=UseOzonePlatform --ozone-platform=wayland %U
+Terminal=false
+Type=Application
+Icon=tabby
+StartupWMClass=tabby
+MimeType=x-scheme-handler/tabby;
+Categories=Utility;TerminalEmulator;System;

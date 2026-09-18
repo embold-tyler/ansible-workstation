@@ -1,0 +1,56 @@
+---
+- name: Update all packages (Fedora)
+  ansible.builtin.dnf:
+    name: '*'
+    state: latest
+  when: ansible_facts['os_family'] == 'RedHat'
+  tags: ['upgrade']
+
+- name: Update all packages (Ubuntu)
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: true
+  when: ansible_facts['os_family'] == 'Debian'
+  tags: ['upgrade']
+
+- name: Install base CLI packages (Fedora)
+  ansible.builtin.dnf:
+    name: "{{ packages_base_fedora }}"
+    state: present
+    allowerasing: true
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Install base CLI packages (Ubuntu)
+  ansible.builtin.apt:
+    name: "{{ packages_base_ubuntu }}"
+    state: present
+    update_cache: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Change login shell to zsh
+  ansible.builtin.user:
+    name: "{{ user_name }}"
+    shell: /usr/bin/zsh
+
+# Dual-boot with Windows: keep the RTC in local time so the clocks agree.
+- name: Set hardware clock to local time (dual-boot)
+  ansible.builtin.command: timedatectl set-local-rtc 1 --adjust-system-clock
+  changed_when: false
+
+- name: Stop GNOME Software from downloading updates in the background
+  ansible.builtin.systemd:
+    name: packagekit
+    enabled: false
+    masked: true
+    state: stopped
+  failed_when: false
+
+# Let `sudo` prompt via GUI when invoked with no tty,
+# e.g. from an agent session's `! sudo ...`.
+- name: Configure SUDO_ASKPASS for GUI sudo prompts without a tty
+  ansible.builtin.copy:
+    dest: /etc/profile.d/sudo-askpass.sh
+    content: |
+      export SUDO_ASKPASS=/usr/libexec/openssh/ssh-askpass
+    mode: "0644"
+  when: ansible_facts['os_family'] == 'RedHat'

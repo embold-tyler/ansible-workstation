@@ -1,0 +1,88 @@
+---
+# Dotfiles are a chezmoi repo pulled in through `coder dotfiles`
+
+- name: Ensure ~/.ssh exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.ssh"
+    state: directory
+    mode: '0700'
+
+- name: Prime github.com in known_hosts
+  ansible.builtin.known_hosts:
+    name: github.com
+    key: "{{ lookup('ansible.builtin.pipe', 'ssh-keyscan -t ed25519 github.com') }}"
+    path: "{{ user_home }}/.ssh/known_hosts"
+    state: present
+
+# --- 1Password SSH agent ------------------------------------------------
+# Keys live in 1Password rather than ~/.ssh, so the same vault works from
+# Fedora, Windows and Coder workspaces without copying private keys around.
+- name: Point ssh at the 1Password agent
+  ansible.builtin.blockinfile:
+    path: "{{ user_home }}/.ssh/config"
+    create: true
+    mode: '0600'
+    marker: "# {mark} ANSIBLE MANAGED: 1password ssh agent"
+    insertafter: EOF
+    block: |
+      Host *
+        IdentityAgent ~/.1password/agent.sock
+
+# gnome-keyring also ships an ssh-agent and wins $SSH_AUTH_SOCK, so anything
+# reading the env var (rather than ssh_config) talks to the wrong agent.
+- name: Disable the gnome-keyring ssh agent
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.config/autostart/gnome-keyring-ssh.desktop"
+    content: |
+      [Desktop Entry]
+      Type=Application
+      Name=SSH Key Agent
+      Hidden=true
+    mode: '0644'
+
+- name: Mask the gcr ssh-agent units
+  become: false
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    scope: user
+    masked: true
+    state: stopped
+  loop:
+    - gcr-ssh-agent.socket
+    - gcr-ssh-agent.service
+  failed_when: false
+
+- name: Export the 1Password agent socket for the session
+  ansible.builtin.lineinfile:
+    path: "{{ user_home }}/.config/environment.d/10-ssh-agent.conf"
+    create: true
+    mode: '0644'
+    line: "SSH_AUTH_SOCK=%h/.1password/agent.sock"
+    regexp: '^SSH_AUTH_SOCK='
+
+# --- Dotfiles -----------------------------------------------------------
+- name: Check whether SSH auth to GitHub works
+  ansible.builtin.command: ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -T git@github.com
+  register: gh_ssh
+  changed_when: false
+  failed_when: false
+
+- name: Warn when SSH auth to GitHub is not ready
+  ansible.builtin.debug:
+    msg: >-
+      SSH auth to github.com is not working, so dotfiles were skipped. Unlock
+      1Password and enable its SSH agent, then re-run:
+      ansible-playbook playbook.yml --ask-become-pass --tags dotfiles
+  when: "'successfully authenticated' not in (gh_ssh.stderr | default(''))"
+
+- name: Apply dotfiles via coder
+  ansible.builtin.command: "coder dotfiles -y {{ dotfiles_repo }}"
+  args:
+    creates: "{{ user_home }}/.config/coderv2/dotfiles"
+  when: "'successfully authenticated' in (gh_ssh.stderr | default(''))"
+
+- name: Re-apply chezmoi (picks up dotfiles changes on a re-run)
+  ansible.builtin.command: chezmoi apply --force
+  when: "'successfully authenticated' in (gh_ssh.stderr | default(''))"
+  changed_when: true
+  failed_when: false

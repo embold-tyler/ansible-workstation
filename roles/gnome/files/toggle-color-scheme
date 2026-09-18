@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Toggle GNOME between light and dark, keeping the legacy GTK theme in step.
+set -eu
+if [ "$(gsettings get org.gnome.desktop.interface color-scheme)" = "'prefer-dark'" ]; then
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+  gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
+else
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+fi

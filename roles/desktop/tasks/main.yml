@@ -1,0 +1,284 @@
+---
+- name: Install desktop packages (Fedora)
+  ansible.builtin.dnf:
+    name: "{{ packages_desktop_fedora }}"
+    state: present
+    allowerasing: true
+  notify: restart nautilus
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Install desktop packages (Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - google-chrome-stable
+      - 1password
+      - 1password-cli
+      - gnome-tweaks
+      - seahorse
+      - playerctl
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+  ignore_errors: true
+
+# --- Tabby (no distro repo; ship straight from the GitHub release) -------
+- name: Look up the latest Tabby release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/Eugeny/tabby/releases/latest
+    return_content: true
+  register: tabby_release
+  changed_when: false
+  failed_when: false
+
+- name: Select the Tabby x86_64 asset
+  ansible.builtin.set_fact:
+    tabby_url: "{{ (tabby_release.json.assets | default([]) | map(attribute='browser_download_url') | select('search', tabby_asset_pattern) | list | first) | default('', true) }}"
+  vars:
+    tabby_asset_pattern: "{{ 'linux-x64\\.rpm$' if ansible_facts['os_family'] == 'RedHat' else 'linux-x64\\.deb$' }}"
+  when: tabby_release.status | default(0) == 200
+
+- name: Install Tabby (Fedora)
+  ansible.builtin.dnf:
+    name: "{{ tabby_url }}"
+    state: present
+    disable_gpg_check: true
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - tabby_url | default('') != ''
+
+- name: Install Tabby (Ubuntu)
+  ansible.builtin.apt:
+    deb: "{{ tabby_url }}"
+    state: present
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - tabby_url | default('') != ''
+
+# --- Vendor packages not published on Flathub ---------------------------
+
+- name: Look up the latest balenaEtcher release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/balena-io/etcher/releases/latest
+    return_content: true
+  register: etcher_release
+  changed_when: false
+  failed_when: false
+
+- name: Select the balenaEtcher x86_64 asset
+  ansible.builtin.set_fact:
+    etcher_url: "{{ (etcher_release.json.assets | default([]) | map(attribute='browser_download_url') | select('search', etcher_asset_pattern) | list | first) | default('', true) }}"
+  vars:
+    etcher_asset_pattern: "{{ 'x86_64\\.rpm$' if ansible_facts['os_family'] == 'RedHat' else 'amd64\\.deb$' }}"
+  when: etcher_release.status | default(0) == 200
+
+- name: Install balenaEtcher (Fedora)
+  ansible.builtin.dnf:
+    name: "{{ etcher_url }}"
+    state: present
+    disable_gpg_check: true
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - etcher_url | default('') != ''
+  failed_when: false
+
+- name: Install Screaming Frog SEO Spider (Fedora)
+  ansible.builtin.dnf:
+    name: "https://download.screamingfrog.co.uk/products/seo-spider/screamingfrogseospider-{{ screamingfrog_version }}.x86_64.rpm"
+    state: present
+    disable_gpg_check: true
+  when: ansible_facts['os_family'] == 'RedHat'
+  failed_when: false
+
+- name: Install Screaming Frog SEO Spider (Ubuntu)
+  ansible.builtin.apt:
+    deb: "https://download.screamingfrog.co.uk/products/seo-spider/screamingfrogseospider_{{ screamingfrog_version | regex_replace('-.*$', '') }}_all.deb"
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+  failed_when: false
+
+# --- LM Studio (AppImage) ------------------------------------------------
+# lmstudio.ai serves its own stable "/download/latest/..." redirect, so no
+# GitHub-release lookup is needed (unlike Tabby/balenaEtcher above).
+- name: Install LM Studio (AppImage)
+  ansible.builtin.get_url:
+    url: "https://lmstudio.ai/download/latest/linux/x64"
+    dest: "{{ user_home }}/.local/bin/lmstudio"
+    mode: '0755'
+
+# StartupWMClass must match the app_id LM Studio's Electron process actually
+# sets on Wayland (from the AppImage's own bundled .desktop file), or GNOME
+# can't match the running window to this launcher and gives it a fresh,
+# icon-less dock entry instead.
+- name: Install the LM Studio desktop entry
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.local/share/applications/lmstudio.desktop"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Type=Application
+      Name=LM Studio
+      Comment=Discover, download, and run local LLMs
+      Exec={{ user_home }}/.local/bin/lmstudio %U
+      Terminal=false
+      Icon=lmstudio
+      Categories=Development;Utility;
+      StartupWMClass=ai.elementlabs.lmstudio
+
+# The AppImage embeds its own icon but Icon=lmstudio only resolves if it also
+# lands in the hicolor theme path; nothing installs it there otherwise, so the
+# entry falls back to the generic executable icon.
+- name: Ensure the hicolor 512x512 apps icon directory exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/share/icons/hicolor/512x512/apps"
+    state: directory
+    mode: '0755'
+
+- name: Extract the LM Studio icon from the AppImage
+  ansible.builtin.command: >-
+    {{ user_home }}/.local/bin/lmstudio --appimage-extract
+    usr/share/icons/hicolor/512x512/apps/lm-studio.png
+  args:
+    chdir: /tmp
+    creates: /tmp/squashfs-root/usr/share/icons/hicolor/512x512/apps/lm-studio.png
+  changed_when: true
+
+- name: Install the LM Studio icon
+  ansible.builtin.copy:
+    src: /tmp/squashfs-root/usr/share/icons/hicolor/512x512/apps/lm-studio.png
+    dest: "{{ user_home }}/.local/share/icons/hicolor/512x512/apps/lmstudio.png"
+    remote_src: true
+    mode: '0644'
+  notify: rebuild icon cache
+
+- name: Clean up the LM Studio icon extraction
+  ansible.builtin.file:
+    path: /tmp/squashfs-root
+    state: absent
+
+# --- Tabby desktop integration ------------------------------------------
+# The packaged tabby.desktop carries no Keywords, so Tabby does not come up
+# when you search "terminal" in the app grid.
+- name: Install Tabby desktop entry with search keywords
+  ansible.builtin.copy:
+    src: tabby.desktop
+    dest: "{{ user_home }}/.local/share/applications/tabby.desktop"
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0644'
+
+# Fedora routes "Open in Terminal" through xdg-terminal-exec, which reads this.
+- name: Make Tabby the default terminal
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.config/xdg-terminals.list"
+    content: "{{ terminal_desktop_id }}\n"
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0644'
+
+- name: Point the legacy default-terminal key at Tabby
+  become: false
+  ansible.builtin.command: "gsettings set org.gnome.desktop.default-applications.terminal {{ item }}"
+  loop:
+    - "exec '{{ terminal_exec }}'"
+    - "exec-arg ''"
+  changed_when: false
+  failed_when: false
+
+# Tabby's `open` subcommand crashes on a yargs bug; passing the directory directly
+# as a positional argument (tabby %s) routes cleanly through OpenPathCLIHandler.
+- name: Configure nautilus-open-any-terminal for Tabby
+  become: false
+  ansible.builtin.command: "gsettings set com.github.stunkymonkey.nautilus-open-any-terminal {{ item }}"
+  loop:
+    - "terminal 'custom'"
+    - "custom-local-command 'tabby %s'"
+  changed_when: false
+  failed_when: false
+
+# --- Nautilus context-menu extensions -----------------------------------
+- name: Ensure the user nautilus-python extensions directory exists
+  become: false
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/share/nautilus-python/extensions"
+    state: directory
+    mode: '0755'
+
+- name: Install the Open in VS Code nautilus extension
+  become: false
+  ansible.builtin.copy:
+    src: code-nautilus.py
+    dest: "{{ user_home }}/.local/share/nautilus-python/extensions/code-nautilus.py"
+    mode: '0644'
+  notify: restart nautilus
+
+# --- Espanso (text expander) --------------------------------------------
+- name: Install espanso
+  ansible.builtin.dnf:
+    name: espanso
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Ensure the espanso config directory exists
+  become: false
+  ansible.builtin.file:
+    path: "{{ user_home }}/.config/espanso/config"
+    state: directory
+    mode: '0755'
+
+# Match the Windows muscle memory: Shift+Alt+Space opens the search bar.
+- name: Configure the espanso search shortcut
+  become: false
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.config/espanso/config/default.yml"
+    mode: '0644'
+    content: |
+      # Managed by ansible-workstation.
+      search_shortcut: "ALT+SHIFT+SPACE"
+      toggle_key: OFF
+
+- name: Register espanso as a user service
+  become: false
+  ansible.builtin.command: espanso service register
+  register: espanso_reg
+  changed_when: "'already' not in (espanso_reg.stderr | default('') + espanso_reg.stdout | default(''))"
+  failed_when: false
+
+- name: Start espanso
+  become: false
+  ansible.builtin.command: espanso start
+  register: espanso_start
+  changed_when: "'already running' not in (espanso_start.stderr | default('') + espanso_start.stdout | default(''))"
+  failed_when: false
+
+# --- Flatpaks -----------------------------------------------------------
+- name: Install Flatpak applications
+  community.general.flatpak:
+    name: "{{ packages_flatpak }}"
+    state: present
+    remote: flathub
+
+# --- Fonts --------------------------------------------------------------
+- name: Ensure Nerd Font directory exists
+  ansible.builtin.file:
+    path: "/usr/share/fonts/{{ nerd_font_name }}Nerd"
+    state: directory
+    mode: '0755'
+
+- name: Install {{ nerd_font_name }} Nerd Font
+  ansible.builtin.unarchive:
+    src: "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ nerd_font_version }}/{{ nerd_font_name }}.zip"
+    dest: "/usr/share/fonts/{{ nerd_font_name }}Nerd"
+    remote_src: true
+    creates: "/usr/share/fonts/{{ nerd_font_name }}Nerd/FiraCodeNerdFont-Regular.ttf"
+  notify: rebuild font cache
+
+# --- GNOME --------------------------------------------------------------
+- name: Apply GNOME settings
+  become: false
+  ansible.builtin.command: "gsettings set {{ item }}"
+  loop:
+    - "org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font Mono 12'"
+    - "org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'"
+    - "org.gnome.desktop.interface color-scheme 'prefer-dark'"
+    - "org.gnome.software download-updates false"
+  changed_when: false
+  failed_when: false

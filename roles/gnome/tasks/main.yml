@@ -1,0 +1,196 @@
+---
+# Everything here runs as the desktop user: gsettings and GNOME extensions are
+# per-user state and writing them as root silently lands in root's dconf.
+
+- name: Install packaged GNOME extensions and shortcut helpers
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - gcolor3            # color picker, bound to Super+Shift+C
+      - tesseract          # required by the OCR extension
+      - tesseract-langpack-eng
+    state: present
+  when: ansible_facts['os_family'] == 'RedHat'
+
+# --- extensions.gnome.org ------------------------------------------------
+# EGO's /download-extension endpoint 500s periodically (the rest of the site
+# stays up), so: only fetch what is missing, retry, and fail only if an
+# extension is still absent afterwards. A download failure for something
+# already installed is not an error.
+- name: Check which GNOME extensions are already installed
+  ansible.builtin.stat:
+    path: "{{ user_home }}/.local/share/gnome-shell/extensions/{{ item.uuid }}"
+  loop: "{{ gnome_extensions_ego }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: gnome_ext_stat
+
+- name: Download missing GNOME extensions
+  ansible.builtin.get_url:
+    url: "https://extensions.gnome.org/download-extension/{{ item.uuid }}.shell-extension.zip?version_tag={{ item.tag }}"
+    dest: "/tmp/{{ item.uuid }}.zip"
+    mode: '0644'
+  loop: "{{ gnome_ext_stat.results | rejectattr('stat.exists') | map(attribute='item') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: gnome_ext_dl
+  retries: 3
+  delay: 5
+  until: gnome_ext_dl is succeeded
+  # NOT `failed_when: false` — that rewrites `failed` to false on the result,
+  # so a failed download still looks successful to the filter below and the
+  # install task then runs against a zip that was never written.
+  ignore_errors: true
+
+- name: Install downloaded GNOME extensions
+  ansible.builtin.command: "gnome-extensions install --force /tmp/{{ item.item.uuid }}.zip"
+  args:
+    creates: "{{ user_home }}/.local/share/gnome-shell/extensions/{{ item.item.uuid }}"
+  loop: "{{ gnome_ext_dl.results | default([]) | rejectattr('failed') | list }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
+- name: Re-check extensions after install
+  ansible.builtin.stat:
+    path: "{{ user_home }}/.local/share/gnome-shell/extensions/{{ item.uuid }}"
+  loop: "{{ gnome_extensions_ego }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: gnome_ext_final
+
+- name: Fail only if an extension is still missing
+  ansible.builtin.assert:
+    that: gnome_ext_final.results | rejectattr('stat.exists') | list | length == 0
+    fail_msg: >-
+      Still missing: {{ gnome_ext_final.results | rejectattr('stat.exists')
+      | map(attribute='item.name') | join(', ') }}.
+      extensions.gnome.org may be returning 500 on /download-extension; it
+      recovers on its own. Re-run with --tags gnome, or install them from
+      the Extension Manager app.
+
+# `gnome-extensions enable` errors with "does not exist" for anything the
+# running shell has not rescanned yet, which is always true for an extension
+# installed in this same run. Writing the dconf list directly works regardless
+# and takes effect at next login.
+- name: Read currently enabled GNOME extensions
+  ansible.builtin.command: gsettings get org.gnome.shell enabled-extensions
+  register: gnome_ext_enabled
+  changed_when: false
+
+- name: Enable GNOME extensions
+  ansible.builtin.command: >-
+    gsettings set org.gnome.shell enabled-extensions "{{ current | union(gnome_extensions_enable) | list }}"
+  vars:
+    current: "{{ gnome_ext_enabled.stdout | replace('@as ', '') | from_yaml | default([], true) }}"
+  when: gnome_extensions_enable | difference(current) | length > 0
+  changed_when: true
+
+# --- Vicinae -------------------------------------------------------------
+- name: Install Vicinae (AppImage)
+  ansible.builtin.get_url:
+    url: "{{ vicinae_appimage_url }}"
+    dest: "{{ vicinae_bin }}"
+    mode: '0755'
+
+- name: Install the Vicinae desktop entry
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.local/share/applications/vicinae.desktop"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Type=Application
+      Name=Vicinae
+      Comment=A focused launcher for your desktop
+      Exec={{ vicinae_bin }} server
+      Terminal=false
+      Icon=vicinae
+      Categories=Utility;
+      StartupWMClass=vicinae
+
+- name: Start the Vicinae server at login
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.config/autostart/vicinae.desktop"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Type=Application
+      Name=Vicinae
+      Exec={{ vicinae_bin }} server
+      Terminal=false
+      X-GNOME-Autostart-enabled=true
+
+# --- Chrome personal-profile launcher -------------------------------------
+- name: Install the Chrome (Personal) desktop entry
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.local/share/applications/google-chrome-personal.desktop"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Version=1.0
+      Name=Chrome (Personal)
+      Comment=Access the Internet with your personal Google profile
+      Exec=/usr/bin/google-chrome-stable --profile-directory="Profile 1" %U
+      Terminal=false
+      Type=Application
+      Icon=google-chrome
+      StartupWMClass=google-chrome
+      Categories=Network;WebBrowser;
+
+# --- Dock ------------------------------------------------------------------
+- name: Set dock favorites
+  ansible.builtin.command: "gsettings set org.gnome.shell favorite-apps \"{{ gnome_favorite_apps }}\""
+  changed_when: false
+
+# --- Light/dark toggle ---------------------------------------------------
+- name: Install the light/dark toggle script
+  ansible.builtin.copy:
+    src: toggle-color-scheme
+    dest: "{{ user_home }}/.local/bin/toggle-color-scheme"
+    mode: '0755'
+
+# --- Keybindings ---------------------------------------------------------
+# Conflicts are cleared before anything is assigned, or the assignment lands
+# on a key another action still owns and neither fires.
+- name: Clear conflicting keybindings
+  ansible.builtin.command: "gsettings set {{ item.schema }} {{ item.key }} \"{{ item.value }}\""
+  loop: "{{ gnome_keybinding_conflicts }}"
+  loop_control:
+    label: "{{ item.schema }} {{ item.key }}"
+  changed_when: false
+  failed_when: false
+
+- name: Apply window/application switching keybindings
+  ansible.builtin.command: "gsettings set {{ item.schema }} {{ item.key }} \"{{ item.value }}\""
+  loop: "{{ gnome_keybindings }}"
+  loop_control:
+    label: "{{ item.key }}"
+  changed_when: false
+
+- name: Apply extension settings
+  ansible.builtin.command: >-
+    gsettings --schemadir "{{ user_home }}/.local/share/gnome-shell/extensions/{{ item.uuid }}/schemas"
+    set {{ item.schema }} {{ item.key }} "{{ item.value }}"
+  loop: "{{ gnome_extension_settings }}"
+  loop_control:
+    label: "{{ item.uuid }} {{ item.key }}"
+  changed_when: false
+
+# --- Custom keybindings --------------------------------------------------
+- name: Register the custom keybinding slots
+  ansible.builtin.command: >-
+    gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "{{ slots }}"
+  vars:
+    slots: "{{ range(gnome_custom_keybindings | length) | map('string') | map('regex_replace', '^(.*)$', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom\\1/') | list }}"
+  changed_when: false
+
+- name: Define each custom keybinding
+  ansible.builtin.shell: |
+    S="org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom{{ idx }}/"
+    gsettings set "$S" name "{{ item.name }}"
+    gsettings set "$S" command "{{ item.command }}"
+    gsettings set "$S" binding "{{ item.binding }}"
+  loop: "{{ gnome_custom_keybindings }}"
+  loop_control:
+    index_var: idx
+    label: "{{ item.name }} -> {{ item.binding }}"
+  changed_when: false

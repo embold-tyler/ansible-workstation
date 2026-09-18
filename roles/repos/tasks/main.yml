@@ -1,0 +1,98 @@
+---
+# ---------------------------------------------------------------- Fedora
+- name: Fedora third-party repositories
+  when: ansible_facts['os_family'] == 'RedHat'
+  block:
+    - name: Enable RPM Fusion (free + nonfree)
+      ansible.builtin.dnf:
+        name:
+          - "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_facts['distribution_major_version'] }}.noarch.rpm"
+          - "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ ansible_facts['distribution_major_version'] }}.noarch.rpm"
+        state: present
+        disable_gpg_check: true
+
+    - name: Add Google Chrome repository
+      ansible.builtin.yum_repository:
+        name: google-chrome
+        description: google-chrome
+        baseurl: https://dl.google.com/linux/chrome/rpm/stable/x86_64
+        gpgcheck: true
+        gpgkey: https://dl.google.com/linux/linux_signing_key.pub
+
+    - name: Add 1Password repository
+      ansible.builtin.yum_repository:
+        name: 1password
+        description: 1Password Stable Channel
+        baseurl: https://downloads.1password.com/linux/rpm/stable/$basearch
+        gpgcheck: true
+        gpgkey: https://downloads.1password.com/linux/keys/1password.asc
+
+    - name: Add GitHub CLI repository
+      ansible.builtin.yum_repository:
+        name: gh-cli
+        description: packages for the GitHub CLI
+        baseurl: https://cli.github.com/packages/rpm
+        gpgcheck: true
+        gpgkey: https://cli.github.com/packages/githubcli-archive-keyring.asc
+
+    - name: Add VS Code repository
+      ansible.builtin.yum_repository:
+        name: code
+        description: Visual Studio Code
+        baseurl: https://packages.microsoft.com/yumrepos/vscode
+        gpgcheck: true
+        gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+
+    - name: Add Cloudflare WARP repository
+      ansible.builtin.get_url:
+        url: https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
+        dest: /etc/yum.repos.d/cloudflare-warp.repo
+        mode: '0644'
+
+    - name: Enable COPR repositories
+      ansible.builtin.command: "dnf -y copr enable {{ item.repo }}"
+      args:
+        creates: "/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:{{ item.file }}.repo"
+      loop:
+        - { repo: 'atim/lazygit', file: 'atim:lazygit' }
+        - { repo: 'eclipseo/espanso', file: 'eclipseo:espanso' }
+        - { repo: 'codifryed/CoolerControl', file: 'codifryed:CoolerControl' }
+        - { repo: 'monkeygold/nautilus-open-any-terminal', file: 'monkeygold:nautilus-open-any-terminal' }
+      loop_control:
+        label: "{{ item.repo }}"
+
+# ---------------------------------------------------------------- Ubuntu
+- name: Ubuntu third-party repositories
+  when: ansible_facts['os_family'] == 'Debian'
+  block:
+    - name: Ensure keyring directory exists
+      ansible.builtin.file:
+        path: /usr/share/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add apt signing keys
+      ansible.builtin.get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.dest }}"
+        mode: '0644'
+      loop:
+        - { url: 'https://packages.microsoft.com/keys/microsoft.asc', dest: '/etc/apt/trusted.gpg.d/microsoft.asc' }
+        - { url: 'https://cli.github.com/packages/githubcli-archive-keyring.asc', dest: '/etc/apt/trusted.gpg.d/githubcli.asc' }
+        - { url: 'https://dl.google.com/linux/linux_signing_key.pub', dest: '/etc/apt/trusted.gpg.d/google-chrome.asc' }
+        - { url: 'https://downloads.1password.com/linux/keys/1password.asc', dest: '/etc/apt/trusted.gpg.d/1password.asc' }
+      loop_control:
+        label: "{{ item.dest | basename }}"
+
+    - name: Add apt repositories
+      ansible.builtin.apt_repository:
+        repo: "{{ item.repo }}"
+        filename: "{{ item.file }}"
+        state: present
+      loop:
+        - { repo: 'deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main', file: 'vscode' }
+        - { repo: 'deb [arch=amd64] https://cli.github.com/packages stable main', file: 'github-cli' }
+        - { repo: 'deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main', file: 'google-chrome' }
+        - { repo: 'deb [arch=amd64] https://downloads.1password.com/linux/debian/amd64 stable main', file: '1password' }
+      loop_control:
+        label: "{{ item.file }}"

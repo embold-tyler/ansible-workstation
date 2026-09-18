@@ -1,0 +1,83 @@
+---
+- name: Install development packages (Fedora)
+  ansible.builtin.dnf:
+    name: "{{ packages_dev_fedora }}"
+    state: present
+    allowerasing: true
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Install development packages (Ubuntu)
+  ansible.builtin.apt:
+    name: "{{ packages_dev_ubuntu }}"
+    state: present
+    update_cache: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+# --- cloudflared --------------------------------------------------------
+- name: Install cloudflared (Fedora)
+  ansible.builtin.dnf:
+    name: https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-x86_64.rpm
+    state: present
+    disable_gpg_check: true
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Install cloudflared (Ubuntu)
+  ansible.builtin.apt:
+    deb: https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+# --- Coder CLI (system-wide, needs root) --------------------------------
+- name: Install Coder CLI
+  ansible.builtin.shell: "curl -fsSL {{ coder_url }}/install.sh | sh"
+  args:
+    creates: /usr/local/bin/coder
+
+# --- User-space toolchains and agent CLIs -------------------------------
+# All of these install under $HOME, so they must NOT run as root.
+- name: Install user-space developer tools
+  become: false
+  ansible.builtin.shell: "{{ item.cmd }}"
+  args:
+    creates: "{{ item.creates }}"
+    executable: /bin/bash
+  loop:
+    - name: fnm
+      cmd: 'curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell'
+      creates: "{{ user_home }}/.local/share/fnm/fnm"
+    - name: bun
+      cmd: 'curl -fsSL https://bun.sh/install | bash'
+      creates: "{{ user_home }}/.bun/bin/bun"
+    - name: uv
+      cmd: 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+      creates: "{{ user_home }}/.local/bin/uv"
+    - name: oh-my-posh
+      cmd: 'curl -s https://ohmyposh.dev/install.sh | bash -s -- -d {{ user_home }}/.local/bin'
+      creates: "{{ user_home }}/.local/bin/oh-my-posh"
+    - name: claude-code
+      cmd: 'curl -fsSL https://claude.ai/install.sh | bash'
+      creates: "{{ user_home }}/.local/bin/claude"
+    - name: opencode
+      cmd: 'curl -fsSL https://opencode.ai/install | bash'
+      creates: "{{ user_home }}/.opencode/bin/opencode"
+    - name: antigravity
+      cmd: 'curl -fsSL https://antigravity.google/cli/install.sh | bash'
+      creates: "{{ user_home }}/.local/bin/agy"
+  loop_control:
+    label: "{{ item.name }}"
+
+# --- Node toolchain -----------------------------------------------------
+# F44 has no plain `nodejs` package (only nodejs22/nodejs24), and this box
+# already uses fnm, so Node is managed by fnm rather than dnf.
+- name: Install Node LTS via fnm
+  become: false
+  ansible.builtin.shell: |
+    export PATH="{{ user_home }}/.local/share/fnm:$PATH"
+    eval "$(fnm env --shell bash)"
+    fnm install --lts
+    fnm default lts-latest
+  args:
+    executable: /bin/bash
+  register: fnm_node
+  changed_when: "'Installing' in fnm_node.stdout"
+  failed_when: false
