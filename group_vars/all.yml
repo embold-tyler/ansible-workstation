@@ -126,7 +126,6 @@ packages_flatpak:
   - org.libreoffice.LibreOffice
   - org.mozilla.Thunderbird
   - org.videolan.VLC
-  - net.martichou.rquickshare
 
 nerd_font_version: "v3.3.0"
 nerd_font_name: "FiraCode"

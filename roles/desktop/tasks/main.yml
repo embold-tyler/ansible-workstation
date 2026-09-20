@@ -95,6 +95,40 @@
   when: ansible_facts['os_family'] == 'Debian'
   failed_when: false
 
+- name: Look up the latest RQuickShare release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/Martichou/rquickshare/releases/latest
+    return_content: true
+  register: rquickshare_release
+  changed_when: false
+  failed_when: false
+
+- name: Select the RQuickShare x86_64 asset
+  ansible.builtin.set_fact:
+    rquickshare_url: "{{ (rquickshare_release.json.assets | default([]) | map(attribute='browser_download_url') | select('search', rquickshare_asset_pattern) | list | first) | default('', true) }}"
+  vars:
+    rquickshare_asset_pattern: "{{ 'r-quick-share-main_.*_x86_64\\.rpm$' if ansible_facts['os_family'] == 'RedHat' else 'r-quick-share-main_.*_amd64\\.deb$' }}"
+  when: rquickshare_release.status | default(0) == 200
+
+- name: Install RQuickShare (Fedora)
+  ansible.builtin.dnf:
+    name: "{{ rquickshare_url }}"
+    state: present
+    disable_gpg_check: true
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - rquickshare_url | default('') != ''
+  failed_when: false
+
+- name: Install RQuickShare (Ubuntu)
+  ansible.builtin.apt:
+    deb: "{{ rquickshare_url }}"
+    state: present
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - rquickshare_url | default('') != ''
+  failed_when: false
+
 # --- LM Studio (AppImage) ------------------------------------------------
 # lmstudio.ai serves its own stable "/download/latest/..." redirect, so no
 # GitHub-release lookup is needed (unlike Tabby/balenaEtcher above).
