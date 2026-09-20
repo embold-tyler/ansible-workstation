@@ -200,7 +200,7 @@ gnome_extensions_enable:
 # real collision found on this machine.
 gnome_keybinding_conflicts:
   # Super+V was the message tray; keep Super+M for that.
-  - { schema: 'org.gnome.shell.keybindings',          key: 'toggle-message-tray', value: "['<Super>m']" }
+  - { schema: 'org.gnome.shell.keybindings',          key: 'toggle-message-tray', value: "['<Super>n']" }
   # Super+Tab cycled windows of one app; move that to the usual Super+grave.
   - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-group',        value: "['<Super>grave']" }
   - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-group-backward', value: "['<Shift><Super>grave']" }
@@ -212,10 +212,10 @@ gnome_keybinding_conflicts:
 
 gnome_keybindings:
   # Windows-like: Alt+Tab = applications, Super+Tab = individual windows.
-  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-applications',          value: "['<Alt>Tab']" }
-  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-applications-backward', value: "['<Shift><Alt>Tab']" }
-  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-windows',               value: "['<Super>Tab']" }
-  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-windows-backward',      value: "['<Shift><Super>Tab']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-applications',          value: "['<Super>Tab']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-applications-backward', value: "['<Shift><Super>Tab']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-windows',               value: "['<Alt>Tab']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-windows-backward',      value: "['<Shift><Alt>Tab']" }
 
 # Extension schemas are NOT on the default gsettings path, so each needs
 # --schemadir pointing at its own extension directory. Without it these

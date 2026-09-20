@@ -24,23 +24,23 @@ ansible-playbook playbook.yml --ask-become-pass --skip-tags upgrade
 The first run aborted in the `common` role and never reached the later roles.
 Causes, all now fixed:
 
-| Old value | Problem | Now |
-|---|---|---|
-| `neofetch` | retired upstream, absent from F44 | `fastfetch` |
-| `pandoc` | renamed | `pandoc-cli` |
-| `p7zip`, `p7zip-plugins` | renamed | `7zip` |
-| `util-linux-user` | merged upstream | `util-linux` (provides `chsh`) |
-| `vim` | metapackage does not exist | `vim-enhanced` |
-| `wget` | replaced by wget2 | `wget2-wget` |
-| `nodejs` | F44 ships only `nodejs22`/`nodejs24` | managed by `fnm` |
-| copr `atim/vicinae` | HTTP 404 | dropped |
-| copr `espanso/espanso` | HTTP 404 | dropped (upstream copr is `eclipseo/espanso`, not currently used) |
-| copr `elxreno/coolercontrol` | HTTP 404 | `codifryed/CoolerControl` |
-| `stdout_callback = yaml` | removed in community.general 12 | `result_format = yaml` |
-| PWA template ran `flatpak run com.google.Chrome` | Chrome is an RPM at `/opt/google/chrome` | `google-chrome-stable --app=` |
-| `dotfiles` role wrote a stub `~/.zshrc` | shadows the real chezmoi dotfiles | `chezmoi init` from the dotfiles repo |
-| flatpak `io.balena.etcher` | ID does not exist on Flathub | vendor RPM from the balena GitHub release |
-| flatpak `uk.co.screamingfrog.ScreamingFrogSEOSpider` | ID does not exist on Flathub | vendor RPM, version pinned in `group_vars` |
+| Old value                                            | Problem                                  | Now                                                               |
+| ---------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------- |
+| `neofetch`                                           | retired upstream, absent from F44        | `fastfetch`                                                       |
+| `pandoc`                                             | renamed                                  | `pandoc-cli`                                                      |
+| `p7zip`, `p7zip-plugins`                             | renamed                                  | `7zip`                                                            |
+| `util-linux-user`                                    | merged upstream                          | `util-linux` (provides `chsh`)                                    |
+| `vim`                                                | metapackage does not exist               | `vim-enhanced`                                                    |
+| `wget`                                               | replaced by wget2                        | `wget2-wget`                                                      |
+| `nodejs`                                             | F44 ships only `nodejs22`/`nodejs24`     | managed by `fnm`                                                  |
+| copr `atim/vicinae`                                  | HTTP 404                                 | dropped                                                           |
+| copr `espanso/espanso`                               | HTTP 404                                 | dropped (upstream copr is `eclipseo/espanso`, not currently used) |
+| copr `elxreno/coolercontrol`                         | HTTP 404                                 | `codifryed/CoolerControl`                                         |
+| `stdout_callback = yaml`                             | removed in community.general 12          | `result_format = yaml`                                            |
+| PWA template ran `flatpak run com.google.Chrome`     | Chrome is an RPM at `/opt/google/chrome` | `google-chrome-stable --app=`                                     |
+| `dotfiles` role wrote a stub `~/.zshrc`              | shadows the real chezmoi dotfiles        | `chezmoi init` from the dotfiles repo                             |
+| flatpak `io.balena.etcher`                           | ID does not exist on Flathub             | vendor RPM from the balena GitHub release                         |
+| flatpak `uk.co.screamingfrog.ScreamingFrogSEOSpider` | ID does not exist on Flathub             | vendor RPM, version pinned in `group_vars`                        |
 
 Every Fedora package name in `group_vars/all.yml` was checked against the live
 F44 repos, and every COPR against the Copr API, before being committed here.
@@ -48,8 +48,8 @@ F44 repos, and every COPR against the Copr API, before being committed here.
 ## Fingerprint reader
 
 `roles/hardware` installs a udev rule that keeps the ELAN `04f3:0c11` sensor out
-of USB autosuspend. Without it, enrollment fails with *"Failed to enroll new
-fingerprint"* / `fprintd: transfer timed out`, because usbcore suspends the
+of USB autosuspend. Without it, enrollment fails with _"Failed to enroll new
+fingerprint"_ / `fprintd: transfer timed out`, because usbcore suspends the
 sensor after 2s and the next libfprint transfer never completes.
 
 After the run, enroll as your normal user (**not** with sudo):
@@ -89,19 +89,19 @@ Both were the shell, not Tabby. In `dot_zshrc`:
 
 ## Keyboard shortcuts
 
-| Shortcut | Action |
-|---|---|
-| `Alt+Tab` / `Shift+Alt+Tab` | switch **applications** |
-| `Super+Tab` / `Shift+Super+Tab` | switch **windows** |
-| `Super+grave` | cycle windows of the current app |
-| `Super+Space` | Vicinae launcher |
-| `Super+V` | Vicinae clipboard history |
-| `Super+.` | Emoji Copy, inserted at the cursor |
-| `Super+Shift+D` | toggle light/dark |
-| `Super+Shift+C` | colour picker (gcolor3) |
-| `Super+Shift+O` | screenshot-region OCR to clipboard |
-| `Super+Shift+K` | Caffeine (inhibit sleep) |
-| `Shift+Alt+Space` | espanso search bar |
+| Shortcut                        | Action                             |
+| ------------------------------- | ---------------------------------- |
+| `Alt+Tab` / `Shift+Alt+Tab`     | switch **windows**                 |
+| `Super+Tab` / `Shift+Super+Tab` | switch **applications**            |
+| `Super+grave`                   | cycle windows of the current app   |
+| `Super+Space`                   | Vicinae launcher                   |
+| `Super+V`                       | Vicinae clipboard history          |
+| `Super+.`                       | Emoji Copy, inserted at the cursor |
+| `Super+Shift+D`                 | toggle light/dark                  |
+| `Super+Shift+C`                 | colour picker (gcolor3)            |
+| `Super+Shift+O`                 | screenshot-region OCR to clipboard |
+| `Super+Shift+K`                 | Caffeine (inhibit sleep)           |
+| `Shift+Alt+Space`               | espanso search bar                 |
 
 Four bindings were already taken and are reassigned first, in
 `gnome_keybinding_conflicts` — assigning over a live binding leaves neither
@@ -115,7 +115,7 @@ working:
 ## GNOME extensions
 
 Installed from extensions.gnome.org into `~/.local/share/gnome-shell/extensions`
-so there is a single location and update path. Fedora *does* package Caffeine,
+so there is a single location and update path. Fedora _does_ package Caffeine,
 but the RPM installs system-wide and would duplicate a user copy.
 
 Extension gsettings schemas are **not** on the default gsettings path, so every
@@ -127,7 +127,7 @@ bumped by hand on a Shell upgrade.
 
 EGO's `/download-extension` endpoint returns 500 from time to time while the
 rest of the site stays up, so the role stats each extension first, only fetches
-what is missing, retries, and fails only if something is *still* absent
+what is missing, retries, and fails only if something is _still_ absent
 afterwards. A download failure for an already-installed extension is not an
 error. Note the download uses `ignore_errors` rather than `failed_when: false`:
 the latter rewrites `failed` to `false` on the result, so a failed download
@@ -211,7 +211,7 @@ Coder workspaces. The dotfiles role points `ssh` at `~/.1password/agent.sock`
 and masks gnome-keyring's competing agent, which otherwise wins `$SSH_AUTH_SOCK`.
 
 `gh` is wrapped by the 1Password shell plugin (`op plugin run -- gh`), so raw
-`gh auth status` reports "not logged in" and any *non-interactive* `gh` call
+`gh auth status` reports "not logged in" and any _non-interactive_ `gh` call
 (scripts, CI, an agent's shell) has no credentials. That is expected, not a
 broken setup.
 
