@@ -314,5 +314,6 @@
     - "org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'"
     - "org.gnome.desktop.interface color-scheme 'prefer-dark'"
     - "org.gnome.software download-updates false"
+    - "org.gnome.nautilus.preferences show-image-thumbnails always"
   changed_when: false
   failed_when: false
