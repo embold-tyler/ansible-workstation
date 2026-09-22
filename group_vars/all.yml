@@ -186,6 +186,8 @@ gnome_extensions_ego:
   - { name: 'Native Screenshot UI OCR Extended', uuid: 'ocr-to-clipboard@oreocapybara', tag: 72660 }
   # Required for Vicinae's clipboard history
   - { name: 'Vicinae (clipboard bridge)',        uuid: 'vicinae@dagimg-dot',            tag: 74338 }
+  # Windows-style edge/side snapping; stock GNOME only does full-maximize.
+  - { name: 'Tiling Assistant',                  uuid: 'tiling-assistant@leleat-on-github', tag: 68287 }
 
 gnome_extensions_enable:
   - nightthemeswitcher@romainvigier.fr
@@ -193,6 +195,7 @@ gnome_extensions_enable:
   - emoji-copy@felipeftn
   - ocr-to-clipboard@oreocapybara
   - vicinae@dagimg-dot
+  - tiling-assistant@leleat-on-github
 
 # --- Keyboard shortcuts -------------------------------------------------
 # Conflicts cleared first, then assignments. Every "free" entry below was a
@@ -205,6 +208,9 @@ gnome_keybinding_conflicts:
   - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-group-backward', value: "['<Shift><Super>grave']" }
   # ibus owns Super+period for emoji; hand it to Emoji Copy instead.
   - { schema: 'org.freedesktop.ibus.panel.emoji',     key: 'hotkey',              value: "[]" }
+  # Super+Shift+Up moved "move window to monitor above" out of the way so
+  # Tiling Assistant's vertical-maximize can use it (matches Windows).
+  - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'move-to-monitor-up', value: "['<Control><Super>Up']" }
   # Only one keyboard layout here, so Super+space is free for the launcher.
   - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-input-source', value: "[]" }
   - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-input-source-backward', value: "[]" }
@@ -225,6 +231,8 @@ gnome_extension_settings:
   - { uuid: 'emoji-copy@felipeftn',          schema: 'org.gnome.shell.extensions.emoji-copy',       key: 'active-keybind',       value: "true" }
   - { uuid: 'ocr-to-clipboard@oreocapybara', schema: 'org.gnome.shell.extensions.ocr-to-clipboard', key: 'capture-ocr-shortcut', value: "['<Super><Shift>o']" }
   - { uuid: 'caffeine@patapon.info',         schema: 'org.gnome.shell.extensions.caffeine',         key: 'toggle-shortcut',      value: "['<Super><Shift>k']" }
+  # Windows' "resize to top edge" behavior: full height, width unchanged.
+  - { uuid: 'tiling-assistant@leleat-on-github', schema: 'org.gnome.shell.extensions.tiling-assistant', key: 'tile-maximize-vertically', value: "['<Super><Shift>Up']" }
 
 # Custom keybindings (name / command / binding).
 gnome_custom_keybindings:
