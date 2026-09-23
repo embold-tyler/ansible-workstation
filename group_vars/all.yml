@@ -123,6 +123,7 @@ packages_flatpak:
   - fr.handbrake.ghb
   - io.beekeeperstudio.Studio
   - io.github.seadve.Kooha
+  - io.podman_desktop.PodmanDesktop
   - org.filezillaproject.Filezilla
   - org.gnome.Extensions
   - org.libreoffice.LibreOffice
