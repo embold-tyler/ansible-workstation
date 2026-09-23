@@ -66,18 +66,24 @@ issues from sandboxed flatpaks.
 
 ## Terminal
 
-Tabby is installed from its GitHub release, and the desktop role:
+WezTerm is installed from the `wezfurlong/wezterm-nightly` COPR (the official
+repo maintained by the WezTerm author, tracking `main` — see `roles/repos`),
+and the desktop role:
 
-- ships a `tabby.desktop` so it is found by searching "terminal" in the app grid
 - writes `~/.config/xdg-terminals.list` to resolve "Open in Terminal" / open-in-console
 - sets the legacy `org.gnome.desktop.default-applications.terminal` key
+- points nautilus-open-any-terminal at `wezterm start --cwd %s`
+- registers a `wezterm-ssh.desktop` as the `x-scheme-handler/ssh` handler, so
+  ssh:// links clicked in a browser open in WezTerm (`wezterm ssh` accepts
+  `[user@]host[:port]` directly, so the handler script just strips the `ssh://`
+  scheme and hands the rest over)
 
-Tabby's own `config.yaml` (Catppuccin Frappe, FiraCode Nerd Font Mono) is
+WezTerm's own `wezterm.lua` (Catppuccin Frappe, FiraCode Nerd Font Mono) is
 chezmoi-managed in the dotfiles repo, not templated here.
 
 ### Stray characters when pasting, and dead Home/End
 
-Both were the shell, not Tabby. In `dot_zshrc`:
+Both were the shell, not the terminal. In `dot_zshrc`:
 
 - `unset zle_bracketed_paste` meant that when a TUI exited without clearing
   bracketed-paste mode, zle stopped stripping the `200~`/`201~` markers the

@@ -16,42 +16,10 @@
       - gnome-tweaks
       - seahorse
       - playerctl
+      - wezterm
     state: present
   when: ansible_facts['os_family'] == 'Debian'
   ignore_errors: true
-
-# --- Tabby (no distro repo; ship straight from the GitHub release) -------
-- name: Look up the latest Tabby release
-  ansible.builtin.uri:
-    url: https://api.github.com/repos/Eugeny/tabby/releases/latest
-    return_content: true
-  register: tabby_release
-  changed_when: false
-  failed_when: false
-
-- name: Select the Tabby x86_64 asset
-  ansible.builtin.set_fact:
-    tabby_url: "{{ (tabby_release.json.assets | default([]) | map(attribute='browser_download_url') | select('search', tabby_asset_pattern) | list | first) | default('', true) }}"
-  vars:
-    tabby_asset_pattern: "{{ 'linux-x64\\.rpm$' if ansible_facts['os_family'] == 'RedHat' else 'linux-x64\\.deb$' }}"
-  when: tabby_release.status | default(0) == 200
-
-- name: Install Tabby (Fedora)
-  ansible.builtin.dnf:
-    name: "{{ tabby_url }}"
-    state: present
-    disable_gpg_check: true
-  when:
-    - ansible_facts['os_family'] == 'RedHat'
-    - tabby_url | default('') != ''
-
-- name: Install Tabby (Ubuntu)
-  ansible.builtin.apt:
-    deb: "{{ tabby_url }}"
-    state: present
-  when:
-    - ansible_facts['os_family'] == 'Debian'
-    - tabby_url | default('') != ''
 
 # --- Vendor packages not published on Flathub ---------------------------
 
@@ -131,7 +99,7 @@
 
 # --- LM Studio (AppImage) ------------------------------------------------
 # lmstudio.ai serves its own stable "/download/latest/..." redirect, so no
-# GitHub-release lookup is needed (unlike Tabby/balenaEtcher above).
+# GitHub-release lookup is needed (unlike balenaEtcher above).
 - name: Install LM Studio (AppImage)
   ansible.builtin.get_url:
     url: "https://lmstudio.ai/download/latest/linux/x64"
@@ -188,19 +156,9 @@
     path: /tmp/squashfs-root
     state: absent
 
-# --- Tabby desktop integration ------------------------------------------
-# The packaged tabby.desktop carries no Keywords, so Tabby does not come up
-# when you search "terminal" in the app grid.
-- name: Install Tabby desktop entry with search keywords
-  ansible.builtin.copy:
-    src: tabby.desktop
-    dest: "{{ user_home }}/.local/share/applications/tabby.desktop"
-    owner: "{{ user_name }}"
-    group: "{{ user_name }}"
-    mode: '0644'
 
 # Fedora routes "Open in Terminal" through xdg-terminal-exec, which reads this.
-- name: Make Tabby the default terminal
+- name: Make WezTerm the default terminal
   ansible.builtin.copy:
     dest: "{{ user_home }}/.config/xdg-terminals.list"
     content: "{{ terminal_desktop_id }}\n"
@@ -208,7 +166,7 @@
     group: "{{ user_name }}"
     mode: '0644'
 
-- name: Point the legacy default-terminal key at Tabby
+- name: Point the legacy default-terminal key at WezTerm
   become: false
   ansible.builtin.command: "gsettings set org.gnome.desktop.default-applications.terminal {{ item }}"
   loop:
@@ -217,14 +175,54 @@
   changed_when: false
   failed_when: false
 
-# Tabby's `open` subcommand crashes on a yargs bug; passing the directory directly
-# as a positional argument (tabby %s) routes cleanly through OpenPathCLIHandler.
-- name: Configure nautilus-open-any-terminal for Tabby
+- name: Configure nautilus-open-any-terminal for WezTerm
   become: false
   ansible.builtin.command: "gsettings set com.github.stunkymonkey.nautilus-open-any-terminal {{ item }}"
   loop:
     - "terminal 'custom'"
-    - "custom-local-command 'tabby %s'"
+    - "custom-local-command 'wezterm start --cwd %s'"
+  changed_when: false
+  failed_when: false
+
+# --- WezTerm as the ssh:// protocol handler -------------------------------
+# WezTerm registers no x-scheme-handler/ssh itself, so browser ssh:// links
+# (e.g. from ClickUp/Notion runbooks) need a small wrapper: `wezterm ssh`
+# already accepts [user@]host[:port] directly, which is exactly an ssh://
+# URI's authority component once the scheme and any trailing path are gone.
+- name: Install the WezTerm ssh:// handler script
+  ansible.builtin.copy:
+    src: wezterm-ssh-open
+    dest: "{{ user_home }}/.local/bin/wezterm-ssh-open"
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0755'
+
+- name: Install the WezTerm ssh:// handler desktop entry
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.local/share/applications/wezterm-ssh.desktop"
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Type=Application
+      Name=WezTerm (SSH)
+      Comment=Open ssh:// links in WezTerm
+      Exec={{ user_home }}/.local/bin/wezterm-ssh-open %u
+      Terminal=false
+      NoDisplay=true
+      MimeType=x-scheme-handler/ssh;
+      Categories=System;TerminalEmulator;
+
+- name: Refresh the desktop database
+  become: false
+  ansible.builtin.command: update-desktop-database "{{ user_home }}/.local/share/applications"
+  changed_when: false
+  failed_when: false
+
+- name: Set WezTerm as the default ssh:// handler
+  become: false
+  ansible.builtin.command: xdg-mime default wezterm-ssh.desktop x-scheme-handler/ssh
   changed_when: false
   failed_when: false
 

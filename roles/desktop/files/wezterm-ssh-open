@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Opens ssh:// URIs (e.g. clicked in a browser) in WezTerm.
+# `wezterm ssh` accepts [user@]host[:port] directly, so this just strips the
+# scheme and any trailing path off the URI and hands the rest straight over.
+set -eu
+target="${1#ssh://}"
+target="${target%%/*}"
+exec wezterm ssh "${target}"

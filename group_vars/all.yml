@@ -113,6 +113,7 @@ packages_desktop_fedora:
   - openssh-askpass     # GUI sudo/ssh prompts when there is no tty
   - playerctl
   - seahorse
+  - wezterm
   - xdg-terminal-exec
 
 # Chrome and 1Password are RPMs (see packages_desktop_fedora).
@@ -138,10 +139,11 @@ nerd_font_name: "FiraCode"
 screamingfrog_version: "24.3-1"
 
 # --- Terminal -----------------------------------------------------------
-# Tabby ships no repo, so it comes from its GitHub release (see desktop role).
-# Its config.yaml is chezmoi-managed in the dotfiles repo, not templated here.
-terminal_desktop_id: "tabby.desktop"
-terminal_exec: "/opt/Tabby/tabby"
+# WezTerm comes from the wezfurlong/wezterm-nightly COPR (see roles/repos),
+# the official repo maintained by the WezTerm author, tracking main. Its
+# wezterm.lua is chezmoi-managed in the dotfiles repo, not templated here.
+terminal_desktop_id: "org.wezfurlong.wezterm.desktop"
+terminal_exec: "/usr/bin/wezterm"
 
 # --- Launcher -----------------------------------------------------------
 vicinae_version: "0.29.0"
@@ -155,7 +157,7 @@ vicinae_bin: "{{ user_home }}/.local/bin/vicinae"
 gnome_favorite_apps:
   - chrome-leeejohakkcbkkheiafmfbofpjbndial-Profile_1.desktop # Gemini (Personal)
   - org.gnome.Nautilus.desktop                                # File Explorer
-  - tabby.desktop                                             # Terminal
+  - org.wezfurlong.wezterm.desktop                            # Terminal
   - org.mozilla.firefox.desktop
   - google-chrome.desktop
   - chrome-edcmabgkbicempmpgmniellhbjopafjh-Default.desktop   # ClickUp

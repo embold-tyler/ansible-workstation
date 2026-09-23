@@ -58,6 +58,8 @@
         - { repo: 'eclipseo/espanso', file: 'eclipseo:espanso' }
         - { repo: 'codifryed/CoolerControl', file: 'codifryed:CoolerControl' }
         - { repo: 'monkeygold/nautilus-open-any-terminal', file: 'monkeygold:nautilus-open-any-terminal' }
+        # Official copr, maintained by the WezTerm author, tracks main.
+        - { repo: 'wezfurlong/wezterm-nightly', file: 'wezfurlong:wezterm-nightly' }
       loop_control:
         label: "{{ item.repo }}"
 
@@ -81,6 +83,7 @@
         - { url: 'https://cli.github.com/packages/githubcli-archive-keyring.asc', dest: '/etc/apt/trusted.gpg.d/githubcli.asc' }
         - { url: 'https://dl.google.com/linux/linux_signing_key.pub', dest: '/etc/apt/trusted.gpg.d/google-chrome.asc' }
         - { url: 'https://downloads.1password.com/linux/keys/1password.asc', dest: '/etc/apt/trusted.gpg.d/1password.asc' }
+        - { url: 'https://apt.fury.io/wez/gpg.key', dest: '/etc/apt/trusted.gpg.d/wezterm.asc' }
       loop_control:
         label: "{{ item.dest | basename }}"
 
@@ -94,5 +97,6 @@
         - { repo: 'deb [arch=amd64] https://cli.github.com/packages stable main', file: 'github-cli' }
         - { repo: 'deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main', file: 'google-chrome' }
         - { repo: 'deb [arch=amd64] https://downloads.1password.com/linux/debian/amd64 stable main', file: '1password' }
+        - { repo: 'deb [arch=amd64] https://apt.fury.io/wez/ * *', file: 'wezterm' }
       loop_control:
         label: "{{ item.file }}"
