@@ -1,0 +1,17 @@
+- name: Install custom Tabby desktop entry (Wayland + Terminal search priority)
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.local/share/applications/tabby.desktop"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Name=Terminal (Tabby)
+      GenericName=Terminal
+      Comment=A terminal for a modern age
+      Keywords=terminal;console;shell;prompt;command line;cli;tty;
+      Exec=/opt/Tabby/tabby --no-sandbox --enable-features=UseOzonePlatform --ozone-platform=wayland %U
+      Terminal=false
+      Type=Application
+      Icon=tabby
+      StartupWMClass=tabby
+      MimeType=x-scheme-handler/tabby;
+      Categories=Utility;TerminalEmulator;System;

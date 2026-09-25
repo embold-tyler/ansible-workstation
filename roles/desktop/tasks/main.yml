@@ -97,64 +97,23 @@
     - rquickshare_url | default('') != ''
   failed_when: false
 
-# --- LM Studio (AppImage) ------------------------------------------------
-# lmstudio.ai serves its own stable "/download/latest/..." redirect, so no
-# GitHub-release lookup is needed (unlike balenaEtcher above).
-- name: Install LM Studio (AppImage)
+
+- name: Download LM Studio AppImage
   ansible.builtin.get_url:
     url: "https://lmstudio.ai/download/latest/linux/x64"
-    dest: "{{ user_home }}/.local/bin/lmstudio"
+    dest: "{{ user_home }}/Downloads/LM-Studio.AppImage"
     mode: '0755'
 
-# StartupWMClass must match the app_id LM Studio's Electron process actually
-# sets on Wayland (from the AppImage's own bundled .desktop file), or GNOME
-# can't match the running window to this launcher and gives it a fresh,
-# icon-less dock entry instead.
-- name: Install the LM Studio desktop entry
-  ansible.builtin.copy:
-    dest: "{{ user_home }}/.local/share/applications/lmstudio.desktop"
-    mode: '0644'
-    content: |
-      [Desktop Entry]
-      Type=Application
-      Name=LM Studio
-      Comment=Discover, download, and run local LLMs
-      Exec={{ user_home }}/.local/bin/lmstudio %U
-      Terminal=false
-      Icon=lmstudio
-      Categories=Development;Utility;
-      StartupWMClass=ai.elementlabs.lmstudio
-
-# The AppImage embeds its own icon but Icon=lmstudio only resolves if it also
-# lands in the hicolor theme path; nothing installs it there otherwise, so the
-# entry falls back to the generic executable icon.
-- name: Ensure the hicolor 512x512 apps icon directory exists
-  ansible.builtin.file:
-    path: "{{ user_home }}/.local/share/icons/hicolor/512x512/apps"
-    state: directory
-    mode: '0755'
-
-- name: Extract the LM Studio icon from the AppImage
-  ansible.builtin.command: >-
-    {{ user_home }}/.local/bin/lmstudio --appimage-extract
-    usr/share/icons/hicolor/512x512/apps/lm-studio.png
-  args:
-    chdir: /tmp
-    creates: /tmp/squashfs-root/usr/share/icons/hicolor/512x512/apps/lm-studio.png
+- name: Integrate LM Studio using Gear Lever
+  ansible.builtin.shell: echo "y" | flatpak run it.mijorus.gearlever --integrate "{{ user_home }}/Downloads/LM-Studio.AppImage"
   changed_when: true
 
-- name: Install the LM Studio icon
-  ansible.builtin.copy:
-    src: /tmp/squashfs-root/usr/share/icons/hicolor/512x512/apps/lm-studio.png
-    dest: "{{ user_home }}/.local/share/icons/hicolor/512x512/apps/lmstudio.png"
-    remote_src: true
-    mode: '0644'
-  notify: rebuild icon cache
-
-- name: Clean up the LM Studio icon extraction
-  ansible.builtin.file:
-    path: /tmp/squashfs-root
-    state: absent
+- name: Strip version suffixes from Gear Lever generated desktop files
+  ansible.builtin.replace:
+    path: "{{ user_home }}/.local/share/applications/lmstudio.desktop"
+    regexp: '^Name=(.*?)\s*\(.*\)$'
+    replace: 'Name=\1'
+  failed_when: false
 
 
 # Fedora routes "Open in Terminal" through xdg-terminal-exec, which reads this.
@@ -287,6 +246,12 @@
     name: "{{ packages_flatpak }}"
     state: present
     remote: flathub
+
+- name: Apply Slack notification click workaround
+  ansible.builtin.command: flatpak override --user --env=NOTIFY_IGNORE_PORTAL=1 com.slack.Slack
+  changed_when: false
+
+- import_tasks: tabby_desktop.yml
 
 # --- Fonts --------------------------------------------------------------
 - name: Ensure Nerd Font directory exists
