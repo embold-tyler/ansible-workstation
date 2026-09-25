@@ -9,6 +9,7 @@
       - gcolor3            # color picker, bound to Super+Shift+C
       - tesseract          # required by the OCR extension
       - tesseract-langpack-eng
+      - zbar               # required by Shotzy for barcode scanning
     state: present
   when: ansible_facts['os_family'] == 'RedHat'
 
@@ -85,27 +86,31 @@
   when: gnome_extensions_enable | difference(current) | length > 0
   changed_when: true
 
+
 # --- Vicinae -------------------------------------------------------------
-- name: Install Vicinae (AppImage)
+- name: Download Vicinae AppImage
   ansible.builtin.get_url:
     url: "{{ vicinae_appimage_url }}"
-    dest: "{{ vicinae_bin }}"
+    dest: "{{ user_home }}/Downloads/Vicinae.AppImage"
     mode: '0755'
 
-- name: Install the Vicinae desktop entry
-  ansible.builtin.copy:
-    dest: "{{ user_home }}/.local/share/applications/vicinae.desktop"
-    mode: '0644'
-    content: |
-      [Desktop Entry]
-      Type=Application
-      Name=Vicinae
-      Comment=A focused launcher for your desktop
-      Exec={{ vicinae_bin }} server
-      Terminal=false
-      Icon=vicinae
-      Categories=Utility;
-      StartupWMClass=vicinae
+- name: Integrate Vicinae using Gear Lever
+  ansible.builtin.shell: echo "y" | flatpak run it.mijorus.gearlever --integrate "{{ user_home }}/Downloads/Vicinae.AppImage"
+  changed_when: true
+
+- name: Strip version suffixes from Gear Lever generated desktop files
+  ansible.builtin.replace:
+    path: "{{ user_home }}/.local/share/applications/vicinae.desktop"
+    regexp: '^Name=(.*?)\s*\(.*\)$'
+    replace: 'Name=\1'
+  failed_when: false
+
+- name: Add Raycast keyword to Vicinae desktop entry
+  ansible.builtin.lineinfile:
+    path: "{{ user_home }}/.local/share/applications/vicinae.desktop"
+    insertbefore: "^Categories="
+    line: "Keywords=raycast;launcher;search;"
+  failed_when: false
 
 - name: Start the Vicinae server at login
   ansible.builtin.copy:
@@ -115,7 +120,7 @@
       [Desktop Entry]
       Type=Application
       Name=Vicinae
-      Exec={{ vicinae_bin }} server
+      Exec={{ user_home }}/AppImages/vicinae.appimage server
       Terminal=false
       X-GNOME-Autostart-enabled=true
 
