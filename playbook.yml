@@ -41,7 +41,7 @@
       tags: ['dev', 'development']
     - role: luks_tpm
       tags: ['luks', 'encryption']
-    - role: howdy
+    - role: gaze
       tags: ['howdy', 'biometrics']
     - role: gnome
       tags: ['gnome', 'desktop']
@@ -56,7 +56,6 @@
         msg:
           - "Provisioning complete."
           - "1. Log out/in (or reboot) so the zsh shell change and nvidia kmod take effect."
-          - "2. Enroll fingerprint as your normal user (NOT sudo):  fprintd-enroll"
           - "3. Sign in to 1Password, then:  op plugin init gh"
           - "4. Authenticate Coder:  coder login https://coder.embold.dev"
           - "5. Re-install your Chrome web apps (Figma included) from inside"
@@ -66,3 +65,4 @@
           - "   change only take effect in a fresh session."
           - "7. Install Vicinae extensions from the checklist in README.md"
           - "   (Launcher > Extensions) - no CLI for this exists yet."
+          - "8. If you have an IR camera for face unlock, enroll your face: sudo gaze enroll && sudo gaze keyring"

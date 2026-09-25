@@ -1,0 +1,50 @@
+---
+- name: Add Gundu Labs repository
+  become: true
+  ansible.builtin.yum_repository:
+    name: gundulabs
+    description: Gundu Labs
+    baseurl: https://packages.gundulabs.com/rpm/fedora/$releasever/$basearch
+    enabled: true
+    gpgcheck: true
+    repo_gpgcheck: true
+    gpgkey: https://packages.gundulabs.com/keys/gundulabs-repo.asc
+
+- name: Install Gaze packages
+  become: true
+  ansible.builtin.dnf:
+    name:
+      - gaze
+      - gaze-gui
+      - gaze-gnome-extension
+    state: present
+
+- name: Enable and start gazed service
+  become: true
+  ansible.builtin.systemd:
+    name: gazed
+    enabled: true
+    state: started
+
+- name: Select authselect profile for Gaze
+  become: true
+  ansible.builtin.command: authselect select gaze with-silent-lastlog with-mdns4 with-pam-gnome-keyring --force
+  register: authselect_gaze
+  changed_when: "'Profile \"gaze\" was selected.' in authselect_gaze.stdout"
+
+- name: Enable face authentication in Gaze GNOME extension
+  become: false
+  ansible.builtin.command: gsettings set org.gnome.shell.extensions.gaze enable-face-authentication true
+  changed_when: false
+
+
+- name: Configure Gaze settings
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/gaze/config.toml
+    regexp: "^#?\\s*{{ item.key }}\\s*="
+    line: "{{ item.key }} = {{ item.value }}"
+  loop:
+    - { key: 'require_confirmation_lock_screen', value: 'true' }
+    - { key: 'encrypt_templates', value: 'true' }
+    - { key: 'unlock_gnome_keyring', value: 'true' }
