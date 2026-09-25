@@ -252,8 +252,8 @@ gnome_extension_settings:
 
 # Custom keybindings (name / command / binding).
 gnome_custom_keybindings:
-  - { name: 'Vicinae launcher',           command: "{{ user_home }}/.local/bin/vicinae toggle",                          binding: '<Super>space' }
-  - { name: 'Vicinae clipboard history',  command: "{{ user_home }}/.local/bin/vicinae cmd launch clipboard:history",    binding: '<Super>v' }
+  - { name: 'Vicinae launcher',           command: "{{ user_home }}/AppImages/vicinae.appimage toggle",                          binding: '<Super>space' }
+  - { name: 'Vicinae clipboard history',  command: "{{ user_home }}/AppImages/vicinae.appimage cmd launch clipboard:history",    binding: '<Super>v' }
   - { name: 'Toggle light/dark',          command: "{{ user_home }}/.local/bin/toggle-color-scheme",                     binding: '<Super><Shift>d' }
   - { name: 'Colour picker',              command: 'gcolor3',                                                            binding: '<Super><Shift>c' }
 
