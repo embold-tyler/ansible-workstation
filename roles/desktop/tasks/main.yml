@@ -99,16 +99,19 @@
 
 
 - name: Download LM Studio AppImage
+  become: false
   ansible.builtin.get_url:
     url: "https://lmstudio.ai/download/latest/linux/x64"
     dest: "{{ user_home }}/Downloads/LM-Studio.AppImage"
     mode: '0755'
 
 - name: Integrate LM Studio using Gear Lever
-  ansible.builtin.shell: echo "y" | flatpak run it.mijorus.gearlever --integrate "{{ user_home }}/Downloads/LM-Studio.AppImage"
+  become: false
+  ansible.builtin.shell: printf "y\nr\n" | flatpak run it.mijorus.gearlever --integrate "{{ user_home }}/Downloads/LM-Studio.AppImage"
   changed_when: true
 
 - name: Strip version suffixes from Gear Lever generated desktop files
+  become: false
   ansible.builtin.replace:
     path: "{{ user_home }}/.local/share/applications/lmstudio.desktop"
     regexp: '^Name=(.*?)\s*\(.*\)$'
@@ -223,7 +226,6 @@
     mode: '0644'
     content: |
       # Managed by ansible-workstation.
-      search_shortcut: "ALT+SHIFT+SPACE"
       toggle_key: OFF
 
 - name: Register espanso as a user service
