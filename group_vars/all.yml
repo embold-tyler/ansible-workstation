@@ -125,6 +125,7 @@ packages_flatpak:
   - io.beekeeperstudio.Studio
   - io.github.seadve.Kooha
   - io.podman_desktop.PodmanDesktop
+  - io.github.tobagin.Ntfyr
   - org.filezillaproject.Filezilla
   - org.gnome.Extensions
   - org.libreoffice.LibreOffice
@@ -173,7 +174,6 @@ gnome_favorite_apps:
   - com.cloudflare.WarpTaskbar.desktop
   - org.gnome.Calendar.desktop                                # no Windows-pin equivalent kept
   - com.onepassword.OnePassword.desktop                       # no Windows-pin equivalent
-  - chrome-cmgiilnmnfechkeifkepembegeckngog-Profile_1.desktop # ntfy, no Windows-pin equivalent
   - org.gnome.Software.desktop                                # no Windows-pin equivalent
 
 # --- GNOME extensions ---------------------------------------------------

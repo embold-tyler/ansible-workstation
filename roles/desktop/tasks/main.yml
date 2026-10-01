@@ -280,3 +280,18 @@
     - "org.gnome.nautilus.preferences show-image-thumbnails always"
   changed_when: false
   failed_when: false
+
+- name: Remove old ntfy PWA autostart
+  ansible.builtin.file:
+    path: "{{ user_home }}/.config/autostart/ntfy.desktop"
+    state: absent
+
+- name: Autostart ntfyr at login
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.config/autostart/io.github.tobagin.Ntfyr.desktop"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Name=Ntfyr
+      Exec=flatpak run io.github.tobagin.Ntfyr
+      Type=Application
