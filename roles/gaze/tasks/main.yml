@@ -26,11 +26,24 @@
     enabled: true
     state: started
 
-- name: Select authselect profile for Gaze
+- name: Create custom authselect profile to fix GDM typing loop
   become: true
-  ansible.builtin.command: authselect select gaze with-silent-lastlog with-mdns4 with-pam-gnome-keyring --force
+  ansible.builtin.command: authselect create-profile custom-gaze -b gaze
+  args:
+    creates: /etc/authselect/custom/custom-gaze
+
+- name: Remove pam_gaze.so from password-auth in custom profile
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/authselect/custom/custom-gaze/password-auth
+    regexp: 'pam_gaze\.so'
+    state: absent
+
+- name: Select custom authselect profile for Gaze
+  become: true
+  ansible.builtin.command: authselect select custom/custom-gaze with-silent-lastlog with-mdns4 with-pam-gnome-keyring --force
   register: authselect_gaze
-  changed_when: "'Profile \"gaze\" was selected.' in authselect_gaze.stdout"
+  changed_when: "'Profile \"custom/custom-gaze\" was selected.' in authselect_gaze.stdout"
 
 - name: Enable face authentication in Gaze GNOME extension
   become: false
