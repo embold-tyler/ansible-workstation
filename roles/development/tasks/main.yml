@@ -66,6 +66,34 @@
   loop_control:
     label: "{{ item.name }}"
 
+# --- Portainer MCP -----------------------------------------------------
+# Ships as an .mcpb bundle (a zip); the server binary is self-contained.
+- name: Create portainer-mcp {{ portainer_mcp_version }} directory
+  become: false
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/share/portainer-mcp-{{ portainer_mcp_version }}"
+    state: directory
+    mode: '0755'
+  when: ansible_facts['architecture'] == 'x86_64'
+
+- name: Unpack portainer-mcp {{ portainer_mcp_version }}
+  become: false
+  ansible.builtin.unarchive:
+    src: "https://github.com/portainer/portainer-mcp/releases/download/{{ portainer_mcp_version }}/portainer-mcp-{{ portainer_mcp_version }}-linux-x64.mcpb"
+    dest: "{{ user_home }}/.local/share/portainer-mcp-{{ portainer_mcp_version }}"
+    remote_src: true
+    creates: "{{ user_home }}/.local/share/portainer-mcp-{{ portainer_mcp_version }}/server/portainer-mcp"
+  when: ansible_facts['architecture'] == 'x86_64'
+
+- name: Link portainer-mcp into ~/.local/bin
+  become: false
+  ansible.builtin.file:
+    src: "{{ user_home }}/.local/share/portainer-mcp-{{ portainer_mcp_version }}/server/portainer-mcp"
+    dest: "{{ user_home }}/.local/bin/portainer-mcp"
+    state: link
+    force: true
+  when: ansible_facts['architecture'] == 'x86_64'
+
 # --- Node toolchain -----------------------------------------------------
 # F44 has no plain `nodejs` package (only nodejs22/nodejs24), and this box
 # already uses fnm, so Node is managed by fnm rather than dnf.
