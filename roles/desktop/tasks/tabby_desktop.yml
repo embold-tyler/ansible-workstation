@@ -8,10 +8,10 @@
       GenericName=Terminal
       Comment=A terminal for a modern age
       Keywords=terminal;console;shell;prompt;command line;cli;tty;
-      Exec=/opt/Tabby/tabby --no-sandbox --enable-features=UseOzonePlatform --ozone-platform=wayland %U
+      Exec=bash -c 'if [ $# -eq 0 ]; then exec /opt/Tabby/tabby --no-sandbox --enable-features=UseOzonePlatform --ozone-platform=wayland; else for url in "$@"; do if [[ "$url" == ssh://* ]]; then /opt/Tabby/tabby --no-sandbox --enable-features=UseOzonePlatform --ozone-platform=wayland quickConnect ssh "${url#ssh://}"; else /opt/Tabby/tabby --no-sandbox --enable-features=UseOzonePlatform --ozone-platform=wayland "$url"; fi; done; fi' _ %U
       Terminal=false
       Type=Application
       Icon=tabby
       StartupWMClass=tabby
-      MimeType=x-scheme-handler/tabby;
+      MimeType=x-scheme-handler/tabby;x-scheme-handler/ssh;
       Categories=Utility;TerminalEmulator;System;
