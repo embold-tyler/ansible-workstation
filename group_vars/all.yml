@@ -267,3 +267,8 @@ gnome_custom_keybindings:
 # TPM2 binding and force a re-enrolment on every firmware update.
 luks_tpm2_pcrs: "7"
 
+
+# --- Face unlock (Gaze) -------------------------------------------------
+# USB vendor:product, not a port path, so the camera survives moving between
+# the dock and the laptop. Gaze picks the colour and IR nodes from it.
+gaze_camera_usb_id: "046d:085e"  # Logitech BRIO

@@ -62,3 +62,5 @@
     - { key: 'require_confirmation_lock_screen', value: 'false' }
     - { key: 'encrypt_templates', value: 'true' }
     - { key: 'unlock_gnome_keyring', value: 'true' }
+    - { key: 'rgb', value: '"usb:{{ gaze_camera_usb_id }}"' }
+    - { key: 'ir', value: '"usb:{{ gaze_camera_usb_id }}"' }
