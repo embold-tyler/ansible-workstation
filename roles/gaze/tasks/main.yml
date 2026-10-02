@@ -17,7 +17,8 @@
       - gaze
       - gaze-gui
       - gaze-gnome-extension
-    state: present
+    # Fast-moving project; 0.3.4 fixed the GDM keyring unlock and IR camera hand-off hangs.
+    state: latest
 
 - name: Enable and start gazed service
   become: true
