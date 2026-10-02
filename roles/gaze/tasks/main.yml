@@ -58,6 +58,7 @@
     regexp: "^#?\\s*{{ item.key }}\\s*="
     line: "{{ item.key }} = {{ item.value }}"
   loop:
-    - { key: 'require_confirmation_lock_screen', value: 'true' }
+    - { key: 'require_confirmation_lock_screen', value: 'false' }
     - { key: 'encrypt_templates', value: 'true' }
-    - { key: 'unlock_gnome_keyring', value: 'true' }
+    # TPM keyring unseal inside gdm-session-worker fails, failing gdm-face after a good match.
+    - { key: 'unlock_gnome_keyring', value: 'false' }
