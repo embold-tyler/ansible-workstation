@@ -191,18 +191,29 @@ needs porting too.
 
 ## Face unlock
 
-`roles/howdy` configures Howdy against the IR camera in a Windows Hello webcam
-(Logitech Brio 4K — the original, not MX Brio or Brio 100/300/500, which have no
-IR sensor). It probes for an IR camera first and skips everything if none is
-attached, so it is safe to run before the hardware arrives.
+`roles/gaze` installs [Gaze](https://github.com/GunduLabs/gaze) from the Gundu Labs
+repo and selects a custom authselect profile for it. It uses the IR camera in a
+Windows Hello webcam (Logitech Brio 4K, the original; the MX Brio and Brio
+100/300/500 have no IR sensor).
 
-It also installs `linux-enable-ir-emitter`, because many Hello cameras leave the
-IR illuminator off by default — which makes face unlock work in daylight and fail
-in the dark.
+- **Packages stay at `latest`.** 0.3.3 broke the lock screen (keyring unlock under
+  SELinux) and hung on the colour → IR camera hand-off; 0.3.4 fixed both.
+- **Camera by USB ID.** `gaze_camera_usb_id` is used for both `rgb` and `ir`, and
+  Gaze picks the colour and IR nodes from it at runtime. Port-based PipeWire paths
+  break when the Brio moves between the dock and the laptop, and Gaze rejects
+  `/dev/v4l/by-id` symlinks.
+- **No emitter setup.** The Brio pulses its own IR LED, so `emitter_enabled` stays
+  off. In the dark the colour camera reports too dark and IR takes over.
+- **Keyring unlock.** `unlock_gnome_keyring` hands a TPM-sealed copy of your
+  password to GNOME Keyring on face login.
 
-The SELinux module is not optional: GDM runs as `xdm_t` and cannot `map` a V4L2
-device without it, so face unlock would work for `sudo` and fail silently at the
-login screen.
+Enrollment is manual: `gaze add-face <name>`, then `gaze refine-face <name>` if a
+profile lacks IR captures, and `sudo gaze keyring` for keyring unlock.
+
+When it misbehaves, `gaze doctor` checks the install. It does not show why an
+attempt failed. For that, add a gazed drop-in with
+`Environment=RUST_LOG=gazed=debug,gaze_vision=debug`, which logs per-frame match
+and liveness scores.
 
 ## Disk encryption
 

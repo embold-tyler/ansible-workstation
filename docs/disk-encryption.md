@@ -169,10 +169,11 @@ Chrome, Slack and anything else using the Secret Service will stop prompting.
 
 ## What this does not fix
 
-Face unlock (Howdy) and fingerprint authenticate without ever producing your
-password, so neither can unlock a *non-blank* keyring. That is why the keyring is
-blanked rather than tied to biometrics — it is the only combination that gives
-unattended unlock and encryption at rest together.
+Fingerprint authenticates without ever producing your password, so it cannot
+unlock a *non-blank* keyring. Gaze face unlock can: `sudo gaze keyring` seals a
+copy of your password in the TPM, and `unlock_gnome_keyring` passes it to GNOME
+Keyring on face login. Blanking the keyring is only needed if you log in by
+fingerprint.
 
 ## If it goes wrong
 

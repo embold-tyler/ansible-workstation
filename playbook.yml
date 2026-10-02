@@ -42,7 +42,7 @@
     - role: luks_tpm
       tags: ['luks', 'encryption']
     - role: gaze
-      tags: ['howdy', 'biometrics']
+      tags: ['gaze', 'biometrics']
     - role: gnome
       tags: ['gnome', 'desktop']
       become: false
@@ -65,4 +65,4 @@
           - "   change only take effect in a fresh session."
           - "7. Install Vicinae extensions from the checklist in README.md"
           - "   (Launcher > Extensions) - no CLI for this exists yet."
-          - "8. If you have an IR camera for face unlock, enroll your face: sudo gaze enroll && sudo gaze keyring"
+          - "8. If you have an IR camera for face unlock, enroll your face: gaze add-face <name>, then sudo gaze keyring"
