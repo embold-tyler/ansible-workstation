@@ -163,7 +163,7 @@ gnome_favorite_apps:
   - org.mozilla.firefox.desktop
   - google-chrome.desktop
   - com.slack.Slack.desktop
-  - code.desktop
+  - com.microsoft.VSCode.desktop
   - lmstudio.desktop                                          # no Windows-pin equivalent
   - google-chrome-personal.desktop                            # Chrome (Personal)
   - com.cloudflare.WarpTaskbar.desktop
