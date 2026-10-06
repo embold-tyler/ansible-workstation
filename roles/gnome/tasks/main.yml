@@ -142,9 +142,18 @@
       Categories=Network;WebBrowser;
 
 # --- Dock ------------------------------------------------------------------
-- name: Set dock favorites
-  ansible.builtin.command: "gsettings set org.gnome.shell favorite-apps \"{{ gnome_favorite_apps }}\""
+- name: Read current dock favorites
+  ansible.builtin.command: gsettings get org.gnome.shell favorite-apps
+  register: current_favorites
   changed_when: false
+
+# Chrome web apps are pinned by hand, so keep unmanaged pins after the listed ones.
+- name: Set dock favorites
+  vars:
+    pinned: "{{ current_favorites.stdout | regex_replace('^@as ', '') | from_yaml }}"
+    favorites: "{{ gnome_favorite_apps + (pinned | reject('in', gnome_favorite_apps) | list) }}"
+  ansible.builtin.command: "gsettings set org.gnome.shell favorite-apps \"{{ favorites }}\""
+  when: favorites != pinned
 
 # --- Light/dark toggle ---------------------------------------------------
 - name: Install the light/dark toggle script
