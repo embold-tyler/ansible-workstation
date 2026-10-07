@@ -124,6 +124,36 @@
       Terminal=false
       X-GNOME-Autostart-enabled=true
 
+- name: Create the Vicinae config directory
+  ansible.builtin.file:
+    path: "{{ user_home }}/.config/vicinae"
+    state: directory
+    mode: '0755'
+
+# Mutter has no wlr-layer-shell; with it enabled "paste to active window" times out
+# waiting for focus transfer and falls back to copy-only.
+- name: Write Vicinae settings managed by Ansible
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.config/vicinae/ansible.json"
+    mode: '0644'
+    content: |
+      {
+        "launcher_window": {
+          "layer_shell": { "enabled": false }
+        }
+      }
+
+# The GUI rewrites settings.json, so only seed it and let it import the managed file.
+- name: Seed Vicinae settings.json to import the managed file
+  ansible.builtin.copy:
+    dest: "{{ user_home }}/.config/vicinae/settings.json"
+    mode: '0644'
+    force: false
+    content: |
+      {
+        "imports": ["./ansible.json"]
+      }
+
 # --- Chrome personal-profile launcher -------------------------------------
 - name: Install the Chrome (Personal) desktop entry
   ansible.builtin.copy:
