@@ -254,6 +254,8 @@
   changed_when: false
 
 - import_tasks: tabby_desktop.yml
+- import_tasks: ghostty.yml
+- import_tasks: ptyxis.yml
 
 # --- Fonts --------------------------------------------------------------
 - name: Ensure Nerd Font directory exists

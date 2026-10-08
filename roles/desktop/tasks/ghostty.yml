@@ -1,0 +1,16 @@
+---
+- name: Ensure Ghostty config directory exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.config/ghostty"
+    state: directory
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0755'
+
+- name: Install Ghostty configuration
+  ansible.builtin.copy:
+    src: ghostty.config
+    dest: "{{ user_home }}/.config/ghostty/config"
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0644'

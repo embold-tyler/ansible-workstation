@@ -105,6 +105,7 @@ packages_desktop_fedora:
   - adw-gtk3-theme
   - cloudflare-warp
   - gimp
+  - ghostty
   - gnome-shell-extension-appindicator
   - gnome-shell-extension-gsconnect
   - gnome-tweaks
@@ -112,6 +113,7 @@ packages_desktop_fedora:
   - nautilus-open-any-terminal
   - openssh-askpass     # GUI sudo/ssh prompts when there is no tty
   - playerctl
+  - ptyxis
   - seahorse
   - xdg-terminal-exec
 

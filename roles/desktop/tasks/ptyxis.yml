@@ -1,0 +1,72 @@
+---
+- name: Ensure Ptyxis palette directories exist (Host and Flatpak)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0755'
+  loop:
+    - "{{ user_home }}/.local/share/org.gnome.Ptyxis/palettes"
+    - "{{ user_home }}/.var/app/app.devsuite.Ptyxis/data/app.devsuite.Ptyxis/palettes"
+    - "{{ user_home }}/.var/app/app.devsuite.Ptyxis/data/ptyxis/palettes"
+
+- name: Install Catppuccin dual-mode palette for Ptyxis
+  ansible.builtin.copy:
+    src: ptyxis-catppuccin.palette
+    dest: "{{ item }}/Catppuccin.palette"
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0644'
+  loop:
+    - "{{ user_home }}/.local/share/org.gnome.Ptyxis/palettes"
+    - "{{ user_home }}/.var/app/app.devsuite.Ptyxis/data/app.devsuite.Ptyxis/palettes"
+    - "{{ user_home }}/.var/app/app.devsuite.Ptyxis/data/ptyxis/palettes"
+
+- name: Configure host Ptyxis interface settings
+  become: false
+  ansible.builtin.command: "gsettings set {{ item }}"
+  loop:
+    - "org.gnome.Ptyxis use-system-font false"
+    - "org.gnome.Ptyxis font-name 'FiraCode Nerd Font Mono 10.5'"
+    - "org.gnome.Ptyxis interface-style 'system'"
+    - "org.gnome.Ptyxis default-columns 125"
+    - "org.gnome.Ptyxis default-rows 38"
+    - "org.gnome.Ptyxis restore-window-size true"
+    - "org.gnome.Ptyxis.Shortcuts undo-close-tab '<ctrl><shift>z'"
+  changed_when: false
+  failed_when: false
+
+- name: Configure host Ptyxis default profile theme and opacity
+  become: false
+  ansible.builtin.shell: |
+    UUID=$(gsettings get org.gnome.Ptyxis default-profile-uuid | tr -d "'")
+    if [ -z "$UUID" ]; then
+      UUID="c6e2ed4b8b4a6fa2cd1319d86aaccea8"
+      gsettings set org.gnome.Ptyxis default-profile-uuid "$UUID"
+      gsettings set org.gnome.Ptyxis profile-uuids "['$UUID']"
+    fi
+    gsettings set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" palette 'Catppuccin'
+    gsettings set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" opacity 0.88
+  changed_when: false
+  failed_when: false
+
+- name: Configure Flatpak Ptyxis settings
+  become: false
+  ansible.builtin.shell: |
+    if command -v flatpak >/dev/null 2>&1 && flatpak info app.devsuite.Ptyxis >/dev/null 2>&1; then
+      flatpak run --command=gsettings app.devsuite.Ptyxis set org.gnome.Ptyxis use-system-font false
+      flatpak run --command=gsettings app.devsuite.Ptyxis set org.gnome.Ptyxis font-name 'FiraCode Nerd Font Mono 10.5'
+      flatpak run --command=gsettings app.devsuite.Ptyxis set org.gnome.Ptyxis interface-style 'system'
+      flatpak run --command=gsettings app.devsuite.Ptyxis set org.gnome.Ptyxis default-columns 125
+      flatpak run --command=gsettings app.devsuite.Ptyxis set org.gnome.Ptyxis default-rows 38
+      flatpak run --command=gsettings app.devsuite.Ptyxis set org.gnome.Ptyxis restore-window-size true
+      flatpak run --command=gsettings app.devsuite.Ptyxis set org.gnome.Ptyxis.Shortcuts undo-close-tab '<ctrl><shift>z'
+      UUID=$(flatpak run --command=gsettings app.devsuite.Ptyxis get org.gnome.Ptyxis default-profile-uuid 2>/dev/null | tr -d "'" | tr -d '\n')
+      if [ -n "$UUID" ]; then
+        flatpak run --command=gsettings app.devsuite.Ptyxis set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" palette 'Catppuccin'
+        flatpak run --command=gsettings app.devsuite.Ptyxis set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" opacity 0.88
+      fi
+    fi
+  changed_when: false
+  failed_when: false
