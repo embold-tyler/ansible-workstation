@@ -253,6 +253,10 @@
   ansible.builtin.command: flatpak override --user --env=NOTIFY_IGNORE_PORTAL=1 com.slack.Slack
   changed_when: false
 
+- name: Expose user fonts to all flatpaks
+  ansible.builtin.command: flatpak override --user --filesystem=~/.local/share/fonts
+  changed_when: false
+
 - import_tasks: tabby_desktop.yml
 - import_tasks: ghostty.yml
 - import_tasks: ptyxis.yml

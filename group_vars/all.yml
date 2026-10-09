@@ -104,6 +104,9 @@ packages_desktop_fedora:
   - 1password-cli
   - adw-gtk3-theme
   - cloudflare-warp
+  - dejavu-sans-fonts
+  - dejavu-sans-mono-fonts
+  - dejavu-serif-fonts
   - gimp
   - ghostty
   - gnome-shell-extension-appindicator
@@ -190,6 +193,7 @@ gnome_extensions_ego:
 
   - { name: 'Lock Keys', uuid: 'lockkeys@vaina.lt', tag: 75259 }
   - { name: 'Shotzy', uuid: 'shotzy@SamkitJain660.github.io', tag: 71980 }
+  - { name: 'Always Show Titles In Overview', uuid: 'Always-Show-Titles-In-Overview@gmail.com', tag: 75235 }
 
 gnome_extensions_enable:
   - nightthemeswitcher@romainvigier.fr
@@ -201,6 +205,7 @@ gnome_extensions_enable:
   - lockkeys@vaina.lt
   - gaze@gundulabs.com
   - shotzy@SamkitJain660.github.io
+  - Always-Show-Titles-In-Overview@gmail.com
 
 # --- Keyboard shortcuts -------------------------------------------------
 # Conflicts cleared first, then assignments. Every "free" entry below was a
@@ -246,6 +251,7 @@ gnome_extension_settings:
   - { uuid: 'caffeine@patapon.info',         schema: 'org.gnome.shell.extensions.caffeine',         key: 'toggle-shortcut',      value: "['<Super><Shift>k']" }
   # Windows' "resize to top edge" behavior: full height, width unchanged.
   - { uuid: 'tiling-assistant@leleat-on-github', schema: 'org.gnome.shell.extensions.tiling-assistant', key: 'tile-maximize-vertically', value: "[]" }
+  - { uuid: 'Always-Show-Titles-In-Overview@gmail.com', schema: 'org.gnome.shell.extensions.always-show-titles-in-overview', key: 'window-title-position', value: "'Center'" }
 
 # Custom keybindings (name / command / binding).
 gnome_custom_keybindings:
