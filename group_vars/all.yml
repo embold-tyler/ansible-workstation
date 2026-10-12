@@ -149,10 +149,8 @@ screamingfrog_version: "24.3-1"
 portainer_mcp_version: "2.45.1"
 
 # --- Terminal -----------------------------------------------------------
-# Tabby ships no repo, so it comes from its GitHub release (see desktop role).
-# Its config.yaml is chezmoi-managed in the dotfiles repo, not templated here.
-terminal_desktop_id: "tabby.desktop"
-terminal_exec: "/opt/Tabby/tabby"
+terminal_desktop_id: "org.gnome.Ptyxis.desktop"
+terminal_exec: "/usr/bin/ptyxis"
 
 # --- Launcher -----------------------------------------------------------
 vicinae_version: "0.29.0"
@@ -164,7 +162,7 @@ vicinae_appimage_url: "https://github.com/vicinaehq/vicinae/releases/download/v{
 #   doesn't drift from what's actually pinned.
 gnome_favorite_apps:
   - org.gnome.Nautilus.desktop                                # File Explorer
-  - tabby.desktop                                             # Terminal
+  - org.gnome.Ptyxis.desktop                                  # Terminal
   - org.mozilla.firefox.desktop
   - google-chrome.desktop
   - com.slack.Slack.desktop

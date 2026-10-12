@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Opens ssh:// URIs (e.g. clicked in a browser) in Ptyxis.
+set -eu
+target="${1#ssh://}"
+target="${target%%/*}"
+
+user=""
+if [[ "$target" == *"@"* ]]; then
+  user="${target%%@*}@"
+  target="${target#*@}"
+fi
+
+port=""
+if [[ "$target" == *":"* ]]; then
+  port="${target#*:}"
+  target="${target%%:*}"
+fi
+
+if [[ -n "$port" ]]; then
+  exec ptyxis -- ssh -p "$port" "${user}${target}"
+else
+  exec ptyxis -- ssh "${user}${target}"
+fi

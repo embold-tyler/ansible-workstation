@@ -120,7 +120,7 @@
 
 
 # Fedora routes "Open in Terminal" through xdg-terminal-exec, which reads this.
-- name: Make WezTerm the default terminal
+- name: Make Ptyxis the default terminal
   ansible.builtin.copy:
     dest: "{{ user_home }}/.config/xdg-terminals.list"
     content: "{{ terminal_desktop_id }}\n"
@@ -128,53 +128,54 @@
     group: "{{ user_name }}"
     mode: '0644'
 
-- name: Point the legacy default-terminal key at WezTerm
+- name: Point the legacy default-terminal key at Ptyxis
   become: false
   ansible.builtin.command: "gsettings set org.gnome.desktop.default-applications.terminal {{ item }}"
   loop:
     - "exec '{{ terminal_exec }}'"
-    - "exec-arg ''"
+    - "exec-arg '--'"
   changed_when: false
   failed_when: false
 
-- name: Configure nautilus-open-any-terminal for WezTerm
+- name: Configure nautilus-open-any-terminal for Ptyxis
   become: false
-  ansible.builtin.command: "gsettings set com.github.stunkymonkey.nautilus-open-any-terminal {{ item }}"
-  loop:
-    - "terminal 'custom'"
-    - "custom-local-command 'wezterm start --cwd %s'"
+  ansible.builtin.command: "gsettings set com.github.stunkymonkey.nautilus-open-any-terminal terminal 'ptyxis'"
   changed_when: false
   failed_when: false
 
-# --- WezTerm as the ssh:// protocol handler -------------------------------
-# WezTerm registers no x-scheme-handler/ssh itself, so browser ssh:// links
-# (e.g. from ClickUp/Notion runbooks) need a small wrapper: `wezterm ssh`
-# already accepts [user@]host[:port] directly, which is exactly an ssh://
-# URI's authority component once the scheme and any trailing path are gone.
-- name: Install the WezTerm ssh:// handler script
+# --- Ptyxis as the ssh:// protocol handler --------------------------------
+- name: Install the Ptyxis ssh:// handler script
   ansible.builtin.copy:
-    src: wezterm-ssh-open
-    dest: "{{ user_home }}/.local/bin/wezterm-ssh-open"
+    src: ptyxis-ssh-open
+    dest: "{{ user_home }}/.local/bin/ptyxis-ssh-open"
     owner: "{{ user_name }}"
     group: "{{ user_name }}"
     mode: '0755'
 
-- name: Install the WezTerm ssh:// handler desktop entry
+- name: Install the Ptyxis ssh:// handler desktop entry
   ansible.builtin.copy:
-    dest: "{{ user_home }}/.local/share/applications/wezterm-ssh.desktop"
+    dest: "{{ user_home }}/.local/share/applications/ptyxis-ssh.desktop"
     owner: "{{ user_name }}"
     group: "{{ user_name }}"
     mode: '0644'
     content: |
       [Desktop Entry]
       Type=Application
-      Name=WezTerm (SSH)
-      Comment=Open ssh:// links in WezTerm
-      Exec={{ user_home }}/.local/bin/wezterm-ssh-open %u
+      Name=Ptyxis (SSH)
+      Comment=Open ssh:// links in Ptyxis
+      Exec={{ user_home }}/.local/bin/ptyxis-ssh-open %u
       Terminal=false
       NoDisplay=true
       MimeType=x-scheme-handler/ssh;
       Categories=System;TerminalEmulator;
+
+- name: Remove legacy terminal handler files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ user_home }}/.local/bin/wezterm-ssh-open"
+    - "{{ user_home }}/.local/share/applications/wezterm-ssh.desktop"
 
 - name: Refresh the desktop database
   become: false
@@ -182,9 +183,9 @@
   changed_when: false
   failed_when: false
 
-- name: Set WezTerm as the default ssh:// handler
+- name: Set Ptyxis as the default ssh:// handler
   become: false
-  ansible.builtin.command: xdg-mime default wezterm-ssh.desktop x-scheme-handler/ssh
+  ansible.builtin.command: xdg-mime default ptyxis-ssh.desktop x-scheme-handler/ssh
   changed_when: false
   failed_when: false
 
@@ -257,7 +258,18 @@
   ansible.builtin.command: flatpak override --user --filesystem=~/.local/share/fonts
   changed_when: false
 
-- import_tasks: tabby_desktop.yml
+# --- Tabby removal ------------------------------------------------------
+- name: Remove Tabby packages
+  ansible.builtin.package:
+    name: tabby-terminal
+    state: absent
+  ignore_errors: true
+
+- name: Remove custom Tabby desktop entry
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/share/applications/tabby.desktop"
+    state: absent
+
 - import_tasks: ghostty.yml
 - import_tasks: ptyxis.yml
 

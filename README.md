@@ -66,20 +66,14 @@ issues from sandboxed flatpaks.
 
 ## Terminal
 
-WezTerm is installed from the `wezfurlong/wezterm-nightly` COPR (the official
-repo maintained by the WezTerm author, tracking `main` — see `roles/repos`),
-and the desktop role:
+Ptyxis is the default terminal emulator, and the desktop role:
 
-- writes `~/.config/xdg-terminals.list` to resolve "Open in Terminal" / open-in-console
+- writes `~/.config/xdg-terminals.list` to resolve "Open in Terminal" / open-in-console (`org.gnome.Ptyxis.desktop`)
 - sets the legacy `org.gnome.desktop.default-applications.terminal` key
-- points nautilus-open-any-terminal at `wezterm start --cwd %s`
-- registers a `wezterm-ssh.desktop` as the `x-scheme-handler/ssh` handler, so
-  ssh:// links clicked in a browser open in WezTerm (`wezterm ssh` accepts
-  `[user@]host[:port]` directly, so the handler script just strips the `ssh://`
-  scheme and hands the rest over)
-
-WezTerm's own `wezterm.lua` (Catppuccin Frappe, FiraCode Nerd Font Mono) is
-chezmoi-managed in the dotfiles repo, not templated here.
+- points nautilus-open-any-terminal at `ptyxis`
+- registers a `ptyxis-ssh.desktop` as the `x-scheme-handler/ssh` handler, so
+  ssh:// links clicked in a browser open in Ptyxis
+- installs a Catppuccin dual-mode palette and configures default window dimensions, font, and opacity (see `roles/desktop/tasks/ptyxis.yml`)
 
 ### Stray characters when pasting, and dead Home/End
 
