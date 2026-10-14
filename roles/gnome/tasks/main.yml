@@ -155,6 +155,12 @@
       }
 
 # --- Chrome personal-profile launcher -------------------------------------
+- name: Install the Chrome (Personal) icon
+  ansible.builtin.copy:
+    src: google-chrome-personal.png
+    dest: "{{ user_home }}/.local/share/icons/google-chrome-personal.png"
+    mode: '0644'
+
 - name: Install the Chrome (Personal) desktop entry
   ansible.builtin.copy:
     dest: "{{ user_home }}/.local/share/applications/google-chrome-personal.desktop"
@@ -167,7 +173,7 @@
       Exec=/usr/bin/google-chrome-stable --profile-directory="Profile 1" %U
       Terminal=false
       Type=Application
-      Icon=google-chrome
+      Icon={{ user_home }}/.local/share/icons/google-chrome-personal.png
       StartupWMClass=google-chrome
       Categories=Network;WebBrowser;
 
