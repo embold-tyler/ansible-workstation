@@ -83,7 +83,7 @@
       gsettings set org.gnome.Ptyxis profile-uuids "['$UUID']"
     fi
     gsettings set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" palette 'Catppuccin'
-    gsettings set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" opacity 0.88
+    gsettings set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" opacity 0.95
   changed_when: false
   failed_when: false
 
@@ -101,7 +101,7 @@
       UUID=$(flatpak run --command=gsettings app.devsuite.Ptyxis get org.gnome.Ptyxis default-profile-uuid 2>/dev/null | tr -d "'" | tr -d '\n')
       if [ -n "$UUID" ]; then
         flatpak run --command=gsettings app.devsuite.Ptyxis set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" palette 'Catppuccin'
-        flatpak run --command=gsettings app.devsuite.Ptyxis set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" opacity 0.88
+        flatpak run --command=gsettings app.devsuite.Ptyxis set "org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/$UUID/" opacity 0.95
       fi
     fi
   changed_when: false
