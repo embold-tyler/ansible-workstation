@@ -14,3 +14,9 @@
     owner: "{{ user_name }}"
     group: "{{ user_name }}"
     mode: '0644'
+
+- name: Remove Ghostty Nautilus extension
+  become: true
+  ansible.builtin.file:
+    path: /usr/share/nautilus-python/extensions/ghostty.py
+    state: absent
