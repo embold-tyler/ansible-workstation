@@ -164,6 +164,7 @@
       Name=Ptyxis (SSH)
       Comment=Open ssh:// links in Ptyxis
       Exec={{ user_home }}/.local/bin/ptyxis-ssh-open %u
+      Icon=org.gnome.Ptyxis
       Terminal=false
       NoDisplay=true
       MimeType=x-scheme-handler/ssh;

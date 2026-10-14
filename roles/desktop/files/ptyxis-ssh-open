@@ -17,7 +17,7 @@ if [[ "$target" == *":"* ]]; then
 fi
 
 if [[ -n "$port" ]]; then
-  exec ptyxis -- ssh -p "$port" "${user}${target}"
+  exec ptyxis --title="ssh: ${user}${target}" --new-window -- ssh -p "$port" "${user}${target}"
 else
-  exec ptyxis -- ssh "${user}${target}"
+  exec ptyxis --title="ssh: ${user}${target}" --new-window -- ssh "${user}${target}"
 fi
