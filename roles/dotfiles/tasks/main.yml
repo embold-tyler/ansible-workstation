@@ -57,7 +57,7 @@
     path: "{{ user_home }}/.config/environment.d/10-ssh-agent.conf"
     create: true
     mode: '0644'
-    line: "SSH_AUTH_SOCK=%h/.1password/agent.sock"
+    line: "SSH_AUTH_SOCK=${HOME}/.1password/agent.sock"
     regexp: '^SSH_AUTH_SOCK='
 
 # --- Dotfiles -----------------------------------------------------------
