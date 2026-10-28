@@ -63,9 +63,10 @@
   when: ansible_facts['os_family'] == 'Debian'
   failed_when: false
 
+# Upstream Martichou/rquickshare stalled at v0.11.5 with broken Wayland titlebar buttons and no Linux BLE receiver.
 - name: Look up the latest RQuickShare release
   ansible.builtin.uri:
-    url: https://api.github.com/repos/Martichou/rquickshare/releases/latest
+    url: https://api.github.com/repos/asulwer/rquickshare/releases/latest
     return_content: true
   register: rquickshare_release
   changed_when: false
@@ -78,10 +79,16 @@
     rquickshare_asset_pattern: "{{ 'r-quick-share-main_.*_x86_64\\.rpm$' if ansible_facts['os_family'] == 'RedHat' else 'r-quick-share-main_.*_amd64\\.deb$' }}"
   when: rquickshare_release.status | default(0) == 200
 
+- name: Remove legacy r-quick-share package name
+  ansible.builtin.package:
+    name: r-quick-share
+    state: absent
+  when: rquickshare_url | default('') != ''
+
 - name: Install RQuickShare (Fedora)
   ansible.builtin.dnf:
     name: "{{ rquickshare_url }}"
-    state: present
+    state: latest
     disable_gpg_check: true
   when:
     - ansible_facts['os_family'] == 'RedHat'
