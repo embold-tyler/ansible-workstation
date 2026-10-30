@@ -32,10 +32,25 @@
     name: "{{ user_name }}"
     shell: /usr/bin/zsh
 
-# Dual-boot with Windows: keep the RTC in local time so the clocks agree.
-- name: Set hardware clock to local time (dual-boot)
-  ansible.builtin.command: timedatectl set-local-rtc 1 --adjust-system-clock
+# Windows uses RealTimeIsUniversal=1 with w32time disabled so Linux owns the RTC in UTC.
+- name: Set hardware clock to UTC
+  ansible.builtin.command: timedatectl set-local-rtc 0
   changed_when: false
+
+# BeaconDB Wi-Fi BSSID lookups time out and mis-locate moved neighbor routers to MST/MDT.
+- name: Configure GeoClue to use Positon GeoIP without Wi-Fi BSSID scanning
+  ansible.builtin.copy:
+    dest: /etc/geoclue/conf.d/99-positon.conf
+    mode: "0644"
+    content: |
+      [ip]
+      enable=true
+      method=ichnaea
+      url=https://api.positon.xyz/v1/geolocate?key=56aba903-ae67-4f26-919b-15288b44bda9
+
+      [wifi]
+      enable=false
+      url=https://api.positon.xyz/v1/geolocate?key=56aba903-ae67-4f26-919b-15288b44bda9
 
 - name: Stop GNOME Software from downloading updates in the background
   ansible.builtin.systemd:
