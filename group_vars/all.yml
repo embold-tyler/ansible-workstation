@@ -108,12 +108,11 @@ packages_desktop_fedora:
   - dejavu-sans-mono-fonts
   - dejavu-serif-fonts
   - gimp
-  - ghostty
   - gnome-shell-extension-appindicator
   - gnome-shell-extension-gsconnect
   - gnome-tweaks
   - google-chrome-stable
-  - nautilus-open-any-terminal
+  - nautilus-python
   - openssh-askpass     # GUI sudo/ssh prompts when there is no tty
   - playerctl
   - ptyxis

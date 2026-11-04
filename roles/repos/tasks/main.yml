@@ -57,10 +57,8 @@
         - { repo: 'atim/lazygit', file: 'atim:lazygit' }
         - { repo: 'eclipseo/espanso', file: 'eclipseo:espanso' }
         - { repo: 'codifryed/CoolerControl', file: 'codifryed:CoolerControl' }
-        - { repo: 'monkeygold/nautilus-open-any-terminal', file: 'monkeygold:nautilus-open-any-terminal' }
         # Official copr, maintained by the WezTerm author, tracks main.
         - { repo: 'wezfurlong/wezterm-nightly', file: 'wezfurlong:wezterm-nightly' }
-        - { repo: 'scottames/ghostty', file: 'scottames:ghostty' }
       loop_control:
         label: "{{ item.repo }}"
 

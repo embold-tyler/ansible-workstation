@@ -70,7 +70,6 @@ Ptyxis is the default terminal emulator, and the desktop role:
 
 - writes `~/.config/xdg-terminals.list` to resolve "Open in Terminal" / open-in-console (`org.gnome.Ptyxis.desktop`)
 - sets the legacy `org.gnome.desktop.default-applications.terminal` key
-- points nautilus-open-any-terminal at `ptyxis`
 - registers a `ptyxis-ssh.desktop` as the `x-scheme-handler/ssh` handler, so
   ssh:// links clicked in a browser open in Ptyxis
 - installs a Catppuccin dual-mode palette and configures default window dimensions, font, and opacity (see `roles/desktop/tasks/ptyxis.yml`)
