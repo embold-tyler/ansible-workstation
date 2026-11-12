@@ -311,3 +311,20 @@
       Name=Ntfyr
       Exec=flatpak run io.github.tobagin.Ntfyr
       Type=Application
+
+# --- Tailscale ----------------------------------------------------------
+# Login is manual (self-hosted Headscale), so this stops at a running daemon.
+- name: Install Tailscale
+  tags: ['tailscale']
+  when: ansible_facts['os_family'] == 'RedHat'
+  block:
+    - name: Install Tailscale package
+      ansible.builtin.dnf:
+        name: tailscale
+        state: present
+
+    - name: Enable and start tailscaled
+      ansible.builtin.systemd:
+        name: tailscaled
+        enabled: true
+        state: started

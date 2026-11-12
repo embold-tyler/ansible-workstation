@@ -49,6 +49,16 @@
         dest: /etc/yum.repos.d/cloudflare-warp.repo
         mode: '0644'
 
+    - name: Add Tailscale repository
+      tags: ['tailscale']
+      ansible.builtin.yum_repository:
+        name: tailscale-stable
+        description: Tailscale stable
+        baseurl: https://pkgs.tailscale.com/stable/fedora/$basearch
+        gpgcheck: true
+        repo_gpgcheck: true
+        gpgkey: https://pkgs.tailscale.com/stable/fedora/repo.gpg
+
     - name: Enable COPR repositories
       ansible.builtin.command: "dnf -y copr enable {{ item.repo }}"
       args:
