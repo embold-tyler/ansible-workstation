@@ -125,6 +125,84 @@
     replace: 'Name=\1'
   failed_when: false
 
+# --- Rustable -----------------------------------------------------------
+- name: Look up the latest Rustable release
+  tags: ['rustable']
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/RustableApp/Rustable/releases/latest
+    return_content: true
+  register: rustable_release
+  changed_when: false
+  failed_when: false
+
+- name: Set the Rustable version from the latest release
+  tags: ['rustable']
+  ansible.builtin.set_fact:
+    rustable_version: "{{ rustable_release.json.tag_name | regex_replace('^v', '') }}"
+  when: rustable_release.status | default(0) == 200
+
+- name: Install Rustable database client
+  tags: ['rustable']
+  when:
+    - ansible_facts['architecture'] == 'x86_64'
+    - rustable_release.status | default(0) == 200
+  block:
+    - name: Create Rustable {{ rustable_version }} directory
+      become: false
+      ansible.builtin.file:
+        path: "{{ user_home }}/.local/share/rustable-{{ rustable_version }}"
+        state: directory
+        mode: '0755'
+
+    - name: Unpack Rustable {{ rustable_version }}
+      become: false
+      ansible.builtin.unarchive:
+        src: "https://github.com/RustableApp/Rustable/releases/download/v{{ rustable_version }}/Rustable-linux-x86_64.tar.gz"
+        dest: "{{ user_home }}/.local/share/rustable-{{ rustable_version }}"
+        remote_src: true
+        extra_opts: ['--strip-components=1']
+        creates: "{{ user_home }}/.local/share/rustable-{{ rustable_version }}/rustable"
+
+    - name: Link Rustable binary into ~/.local/bin
+      become: false
+      ansible.builtin.file:
+        src: "{{ user_home }}/.local/share/rustable-{{ rustable_version }}/rustable"
+        dest: "{{ user_home }}/.local/bin/rustable"
+        state: link
+        force: true
+
+    - name: Ensure user scalable icons directory exists
+      become: false
+      ansible.builtin.file:
+        path: "{{ user_home }}/.local/share/icons/hicolor/scalable/apps"
+        state: directory
+        mode: '0755'
+
+    - name: Install Rustable icon
+      become: false
+      ansible.builtin.copy:
+        src: rustable.svg
+        dest: "{{ user_home }}/.local/share/icons/hicolor/scalable/apps/rustable.svg"
+        mode: '0644'
+      notify: rebuild icon cache
+
+    - name: Install Rustable desktop entry
+      become: false
+      ansible.builtin.copy:
+        dest: "{{ user_home }}/.local/share/applications/rustable.desktop"
+        mode: '0644'
+        content: |
+          [Desktop Entry]
+          Name=Rustable
+          GenericName=Database Client
+          Comment=Native database client for PostgreSQL, MySQL, MariaDB, SQLite, and Redis
+          Exec={{ user_home }}/.local/bin/rustable %U
+          Icon=rustable
+          Terminal=false
+          Type=Application
+          Categories=Development;Database;
+          StartupWMClass=Rustable
+
 
 # Fedora routes "Open in Terminal" through xdg-terminal-exec, which reads this.
 - name: Make Ptyxis the default terminal
@@ -283,7 +361,7 @@
 
 - name: Install {{ nerd_font_name }} Nerd Font
   ansible.builtin.unarchive:
-    src: "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ nerd_font_version }}/{{ nerd_font_name }}.zip"
+    src: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/{{ nerd_font_name }}.zip"
     dest: "/usr/share/fonts/{{ nerd_font_name }}Nerd"
     remote_src: true
     creates: "/usr/share/fonts/{{ nerd_font_name }}Nerd/FiraCodeNerdFont-Regular.ttf"

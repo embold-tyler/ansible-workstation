@@ -136,7 +136,6 @@ packages_flatpak:
   - org.mozilla.Thunderbird
   - org.videolan.VLC
 
-nerd_font_version: "v3.3.0"
 nerd_font_name: "FiraCode"
 
 # Screaming Frog publishes no "latest" URL, so this is pinned. Bump it from
@@ -152,8 +151,7 @@ terminal_desktop_id: "org.gnome.Ptyxis.desktop"
 terminal_exec: "/usr/bin/ptyxis"
 
 # --- Launcher -----------------------------------------------------------
-vicinae_version: "0.29.0"
-vicinae_appimage_url: "https://github.com/vicinaehq/vicinae/releases/download/v{{ vicinae_version }}/Vicinae-x86_64.AppImage"
+vicinae_appimage_url: "https://github.com/vicinaehq/vicinae/releases/latest/download/Vicinae-x86_64.AppImage"
 
 # --- Dock ----------------------------------------------------------------
 # Pin order as set on the desktop.
