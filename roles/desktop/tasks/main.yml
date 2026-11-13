@@ -126,9 +126,26 @@
   failed_when: false
 
 # --- Rustable -----------------------------------------------------------
+- name: Look up the latest Rustable release
+  tags: ['rustable']
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/RustableApp/Rustable/releases/latest
+    return_content: true
+  register: rustable_release
+  changed_when: false
+  failed_when: false
+
+- name: Set the Rustable version from the latest release
+  tags: ['rustable']
+  ansible.builtin.set_fact:
+    rustable_version: "{{ rustable_release.json.tag_name | regex_replace('^v', '') }}"
+  when: rustable_release.status | default(0) == 200
+
 - name: Install Rustable database client
   tags: ['rustable']
-  when: ansible_facts['architecture'] == 'x86_64'
+  when:
+    - ansible_facts['architecture'] == 'x86_64'
+    - rustable_release.status | default(0) == 200
   block:
     - name: Create Rustable {{ rustable_version }} directory
       become: false
@@ -344,7 +361,7 @@
 
 - name: Install {{ nerd_font_name }} Nerd Font
   ansible.builtin.unarchive:
-    src: "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ nerd_font_version }}/{{ nerd_font_name }}.zip"
+    src: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/{{ nerd_font_name }}.zip"
     dest: "/usr/share/fonts/{{ nerd_font_name }}Nerd"
     remote_src: true
     creates: "/usr/share/fonts/{{ nerd_font_name }}Nerd/FiraCodeNerdFont-Regular.ttf"

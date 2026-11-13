@@ -136,15 +136,11 @@ packages_flatpak:
   - org.mozilla.Thunderbird
   - org.videolan.VLC
 
-nerd_font_version: "v3.3.0"
 nerd_font_name: "FiraCode"
 
 # Screaming Frog publishes no "latest" URL, so this is pinned. Bump it from
 # https://www.screamingfrog.co.uk/seo-spider/ when a new release lands.
 screamingfrog_version: "24.3-1"
-
-# Rustable: https://github.com/RustableApp/Rustable
-rustable_version: "0.4.26"
 
 # Pinned so the MCP config in dotfiles (env var names) can't silently drift
 # from the binary. Releases: https://github.com/portainer/portainer-mcp/releases
@@ -155,8 +151,7 @@ terminal_desktop_id: "org.gnome.Ptyxis.desktop"
 terminal_exec: "/usr/bin/ptyxis"
 
 # --- Launcher -----------------------------------------------------------
-vicinae_version: "0.29.0"
-vicinae_appimage_url: "https://github.com/vicinaehq/vicinae/releases/download/v{{ vicinae_version }}/Vicinae-x86_64.AppImage"
+vicinae_appimage_url: "https://github.com/vicinaehq/vicinae/releases/latest/download/Vicinae-x86_64.AppImage"
 
 # --- Dock ----------------------------------------------------------------
 # Pin order as set on the desktop.
