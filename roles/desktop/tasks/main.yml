@@ -269,6 +269,16 @@
   changed_when: false
   failed_when: false
 
+- name: Disassociate Remmina from ssh:// scheme
+  become: false
+  community.general.ini_file:
+    path: "{{ user_home }}/.config/mimeapps.list"
+    section: "Removed Associations"
+    option: "x-scheme-handler/ssh"
+    value: "org.remmina.Remmina.desktop;"
+    no_extra_spaces: true
+    mode: '0644'
+
 # --- Nautilus context-menu extensions -----------------------------------
 - name: Ensure the user nautilus-python extensions directory exists
   become: false
@@ -349,6 +359,13 @@
   ansible.builtin.file:
     path: "{{ user_home }}/.local/share/applications/tabby.desktop"
     state: absent
+
+# --- Redundant application removal --------------------------------------
+- name: Remove GNOME Connections
+  ansible.builtin.package:
+    name: gnome-connections
+    state: absent
+  ignore_errors: true
 
 - import_tasks: ptyxis.yml
 
