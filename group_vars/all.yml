@@ -116,6 +116,9 @@ packages_desktop_fedora:
   - openssh-askpass     # GUI sudo/ssh prompts when there is no tty
   - playerctl
   - ptyxis
+  - remmina
+  - remmina-plugins-rdp
+  - remmina-plugins-secret
   - seahorse
   - xdg-terminal-exec
 
