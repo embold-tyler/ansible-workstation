@@ -132,12 +132,16 @@
 
 # Mutter has no wlr-layer-shell; with it enabled "paste to active window" times out
 # waiting for focus transfer and falls back to copy-only.
+# close_on_focus_loss ensures the window dismisses on blur so it doesn't linger
+# in the background and desynchronize Wayland clipboard selections.
 - name: Write Vicinae settings managed by Ansible
   ansible.builtin.copy:
     dest: "{{ user_home }}/.config/vicinae/ansible.json"
     mode: '0644'
     content: |
       {
+        "close_on_focus_loss": true,
+        "pop_to_root_on_close": true,
         "launcher_window": {
           "layer_shell": { "enabled": false }
         }
@@ -196,6 +200,12 @@
   ansible.builtin.copy:
     src: toggle-color-scheme
     dest: "{{ user_home }}/.local/bin/toggle-color-scheme"
+    mode: '0755'
+
+- name: Install the Vicinae clipboard toggle script
+  ansible.builtin.copy:
+    src: vicinae-clipboard-toggle
+    dest: "{{ user_home }}/.local/bin/vicinae-clipboard-toggle"
     mode: '0755'
 
 # --- Keybindings ---------------------------------------------------------

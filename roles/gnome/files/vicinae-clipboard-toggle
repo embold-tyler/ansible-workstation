@@ -1,0 +1,6 @@
+#!/bin/bash
+if /home/tyler/AppImages/vicinae.appimage state open >/dev/null 2>&1; then
+  /home/tyler/AppImages/vicinae.appimage close
+else
+  /home/tyler/AppImages/vicinae.appimage cmd launch clipboard:history
+fi
