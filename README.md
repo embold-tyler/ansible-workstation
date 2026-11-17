@@ -88,19 +88,22 @@ Both were the shell, not the terminal. In `dot_zshrc`:
 
 ## Keyboard shortcuts
 
-| Shortcut                        | Action                             |
-| ------------------------------- | ---------------------------------- |
-| `Alt+Tab` / `Shift+Alt+Tab`     | switch **windows**                 |
-| `Super+Tab` / `Shift+Super+Tab` | switch **applications**            |
-| `Super+grave`                   | cycle windows of the current app   |
-| `Super+Space`                   | Vicinae launcher                   |
-| `Super+V`                       | Vicinae clipboard history          |
-| `Super+.`                       | Emoji Copy, inserted at the cursor |
-| `Super+Shift+D`                 | toggle light/dark                  |
-| `Super+Shift+C`                 | colour picker (gcolor3)            |
-| `Super+Shift+O`                 | screenshot-region OCR to clipboard |
-| `Super+Shift+K`                 | Caffeine (inhibit sleep)           |
-| `Shift+Alt+Space`               | espanso search bar                 |
+| Shortcut                                    | Action                                      |
+| ------------------------------------------- | ------------------------------------------- |
+| `Alt+Tab` / `Shift+Alt+Tab`                 | switch **windows**                          |
+| `Super+Tab` / `Shift+Super+Tab`             | switch **applications**                     |
+| `Super+grave`                               | cycle windows of the current app            |
+| `Ctrl+Super+Left` / `Ctrl+Super+Right`       | switch **workspaces** (matches Windows)     |
+| `Ctrl+Shift+Super+Left` / `...Right`        | move window to workspace                    |
+| `Super+Shift+Up`                            | toggle vertical maximize (Tiling Assistant) |
+| `Super+Space`                               | Vicinae launcher                            |
+| `Super+V`                                   | Vicinae clipboard history                   |
+| `Super+.`                                   | Emoji Copy, inserted at the cursor          |
+| `Super+Shift+D`                             | toggle light/dark                           |
+| `Super+Shift+C`                             | colour picker (gcolor3)                     |
+| `Super+Shift+O`                             | screenshot-region OCR to clipboard          |
+| `Super+Shift+K`                             | Caffeine (inhibit sleep)                    |
+| `Shift+Alt+Space`                           | espanso search bar                          |
 
 Four bindings were already taken and are reassigned first, in
 `gnome_keybinding_conflicts` — assigning over a live binding leaves neither

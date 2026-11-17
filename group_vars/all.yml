@@ -224,13 +224,18 @@ gnome_keybinding_conflicts:
   - { schema: 'org.gnome.desktop.wm.keybindings',     key: 'switch-input-source-backward', value: "[]" }
 
 gnome_keybindings:
-  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'maximize-vertically', value: "['<Super><Shift>Up']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'maximize-vertically', value: "[]" }
   - { schema: 'org.gnome.desktop.wm.preferences', key: 'action-middle-click-titlebar', value: "'toggle-maximize-vertically'" }
   # Windows-like: Alt+Tab = applications, Super+Tab = individual windows.
   - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-applications',          value: "['<Super>Tab']" }
   - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-applications-backward', value: "['<Shift><Super>Tab']" }
   - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-windows',               value: "['<Alt>Tab']" }
   - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-windows-backward',      value: "['<Shift><Alt>Tab']" }
+  # Windows-like workspace switching: Ctrl+Super+Left/Right
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-to-workspace-left',     value: "['<Control><Super>Left', '<Super>Page_Up', '<Control><Alt>Left']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-to-workspace-right',    value: "['<Control><Super>Right', '<Super>Page_Down', '<Control><Alt>Right']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'move-to-workspace-left',       value: "['<Control><Shift><Super>Left', '<Super><Shift>Page_Up']" }
+  - { schema: 'org.gnome.desktop.wm.keybindings', key: 'move-to-workspace-right',      value: "['<Control><Shift><Super>Right', '<Super><Shift>Page_Down']" }
 
 # Extension schemas are NOT on the default gsettings path, so each needs
 # --schemadir pointing at its own extension directory. Without it these
@@ -248,7 +253,7 @@ gnome_extension_settings:
   - { uuid: 'emoji-copy@felipeftn',          schema: 'org.gnome.shell.extensions.emoji-copy',       key: 'active-keybind',       value: "true" }
   - { uuid: 'caffeine@patapon.info',         schema: 'org.gnome.shell.extensions.caffeine',         key: 'toggle-shortcut',      value: "['<Super><Shift>k']" }
   # Windows' "resize to top edge" behavior: full height, width unchanged.
-  - { uuid: 'tiling-assistant@leleat-on-github', schema: 'org.gnome.shell.extensions.tiling-assistant', key: 'tile-maximize-vertically', value: "[]" }
+  - { uuid: 'tiling-assistant@leleat-on-github', schema: 'org.gnome.shell.extensions.tiling-assistant', key: 'tile-maximize-vertically', value: "['<Super><Shift>Up']" }
   - { uuid: 'Always-Show-Titles-In-Overview@gmail.com', schema: 'org.gnome.shell.extensions.always-show-titles-in-overview', key: 'window-title-position', value: "'Center'" }
 
 # Custom keybindings (name / command / binding).
