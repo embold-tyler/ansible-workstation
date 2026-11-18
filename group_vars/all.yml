@@ -255,6 +255,10 @@ gnome_extension_settings:
   # Windows' "resize to top edge" behavior: full height, width unchanged.
   - { uuid: 'tiling-assistant@leleat-on-github', schema: 'org.gnome.shell.extensions.tiling-assistant', key: 'tile-maximize-vertically', value: "['<Super><Shift>Up']" }
   - { uuid: 'Always-Show-Titles-In-Overview@gmail.com', schema: 'org.gnome.shell.extensions.always-show-titles-in-overview', key: 'window-title-position', value: "'Center'" }
+  # GTK3 ignores GNOME's color-scheme, so switch gtk-theme alongside it.
+  - { uuid: 'nightthemeswitcher@romainvigier.fr', schema: 'org.gnome.shell.extensions.nightthemeswitcher.commands', key: 'enabled', value: 'true' }
+  - { uuid: 'nightthemeswitcher@romainvigier.fr', schema: 'org.gnome.shell.extensions.nightthemeswitcher.commands', key: 'sunrise', value: 'gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3' }
+  - { uuid: 'nightthemeswitcher@romainvigier.fr', schema: 'org.gnome.shell.extensions.nightthemeswitcher.commands', key: 'sunset',  value: 'gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark' }
 
 # Custom keybindings (name / command / binding).
 gnome_custom_keybindings:

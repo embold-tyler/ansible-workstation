@@ -125,6 +125,15 @@
     replace: 'Name=\1'
   failed_when: false
 
+# ClickUp's Electron binary defaults to GTK3, which ignores GNOME's color-scheme.
+- name: Pass --gtk-version=4 to ClickUp AppImage desktop entry
+  become: false
+  ansible.builtin.replace:
+    path: "{{ user_home }}/.local/share/applications/clickup.desktop"
+    regexp: '^(Exec=.*clickup\.appimage)\s+%U$'
+    replace: '\1 --gtk-version=4 %U'
+  failed_when: false
+
 # --- Rustable -----------------------------------------------------------
 - name: Look up the latest Rustable release
   tags: ['rustable']
