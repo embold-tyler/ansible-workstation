@@ -85,6 +85,12 @@
     state: absent
   when: rquickshare_url | default('') != ''
 
+- name: Remove legacy RQuickShare autostart entry
+  become: false
+  ansible.builtin.file:
+    path: "{{ user_home }}/.config/autostart/RQuickShare.desktop"
+    state: absent
+
 - name: Install RQuickShare (Fedora)
   ansible.builtin.dnf:
     name: "{{ rquickshare_url }}"
@@ -333,6 +339,24 @@
   ansible.builtin.command: espanso service register
   register: espanso_reg
   changed_when: "'already' not in (espanso_reg.stderr | default('') + espanso_reg.stdout | default(''))"
+  failed_when: false
+
+# Run the headless daemon directly so Wayland doesn't pop up the launcher GUI at login.
+- name: Use espanso daemon instead of launcher in user service
+  become: false
+  ansible.builtin.lineinfile:
+    path: "{{ user_home }}/.config/systemd/user/espanso-wayland.service"
+    regexp: '^ExecStart='
+    line: 'ExecStart=/usr/bin/espanso daemon'
+  register: espanso_service_unit
+  failed_when: false
+
+- name: Reload user systemd if espanso service unit changed
+  become: false
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    scope: user
+  when: espanso_service_unit is changed
   failed_when: false
 
 - name: Start espanso
