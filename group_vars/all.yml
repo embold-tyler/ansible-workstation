@@ -25,9 +25,12 @@ packages_base_fedora:
   - htop
   - jq
   - just
+  - ncdu
   - openvpn
   - pandoc-cli
   - ripgrep
+  - snapper
+  - tailscale
   - tealdeer
   - tmux
   - util-linux
@@ -129,12 +132,15 @@ packages_flatpak:
   - com.mattjakeman.ExtensionManager
   - com.slack.Slack
   - fr.handbrake.ghb
-  - io.beekeeperstudio.Studio
   - io.github.seadve.Kooha
-  - io.podman_desktop.PodmanDesktop
   - io.github.tobagin.Ntfyr
+  - io.gitlab.theevilskeleton.Upscaler
+  - io.podman_desktop.PodmanDesktop
   - org.filezillaproject.Filezilla
   - org.gnome.Extensions
+  - org.gnome.gThumb
+  - org.gnome.World.PikaBackup
+  - org.kde.okular
   - org.libreoffice.LibreOffice
   - org.mozilla.Thunderbird
   - org.videolan.VLC
