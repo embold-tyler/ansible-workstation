@@ -112,6 +112,8 @@
     line: "Keywords=raycast;launcher;search;"
   failed_when: false
 
+# Delay startup so GNOME Shell finishes enabling vicinae@dagimg-dot before
+# vicinae-server probes D-Bus (otherwise it falls back to the dummy clipboard).
 - name: Start the Vicinae server at login
   ansible.builtin.copy:
     dest: "{{ user_home }}/.config/autostart/vicinae.desktop"
@@ -123,6 +125,7 @@
       Exec={{ user_home }}/AppImages/vicinae.appimage server
       Terminal=false
       X-GNOME-Autostart-enabled=true
+      X-GNOME-Autostart-Delay=5
 
 - name: Create the Vicinae config directory
   ansible.builtin.file:
