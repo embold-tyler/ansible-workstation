@@ -131,6 +131,7 @@ packages_flatpak:
   - com.github.huluti.Curtail
   - com.mattjakeman.ExtensionManager
   - com.slack.Slack
+  - eu.betterbird.Betterbird
   - fr.handbrake.ghb
   - io.github.seadve.Kooha
   - io.github.tobagin.Ntfyr
@@ -142,7 +143,6 @@ packages_flatpak:
   - org.gnome.World.PikaBackup
   - org.kde.okular
   - org.libreoffice.LibreOffice
-  - org.mozilla.Thunderbird
   - org.videolan.VLC
 
 nerd_font_name: "FiraCode"
