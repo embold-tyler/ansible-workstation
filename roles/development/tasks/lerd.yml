@@ -1,0 +1,60 @@
+---
+# lerd: Podman-based local PHP environment (Linux counterpart to Herd).
+# Mirrors install.sh, split so the root steps run under become and the
+# interactive `lerd install` runs unattended as the user.
+- name: Create lerd download directory
+  become: false
+  ansible.builtin.file:
+    path: "{{ user_home }}/.cache/lerd-install"
+    state: directory
+    mode: '0755'
+
+- name: Download and unpack lerd {{ lerd_version }}
+  become: false
+  ansible.builtin.unarchive:
+    src: "https://github.com/lerd-env/lerd/releases/download/v{{ lerd_version }}/lerd_{{ lerd_version }}_linux_amd64.tar.gz"
+    dest: "{{ user_home }}/.cache/lerd-install"
+    remote_src: true
+    creates: "{{ user_home }}/.local/bin/lerd"
+  register: lerd_download
+
+- name: Install the lerd binary into ~/.local/bin
+  become: false
+  ansible.builtin.copy:
+    src: "{{ user_home }}/.cache/lerd-install/lerd"
+    dest: "{{ user_home }}/.local/bin/lerd"
+    remote_src: true
+    mode: '0755'
+  when: lerd_download is changed
+
+# Unprivileged ports 80/443, systemd linger and the DNS sudoers rule.
+- name: Apply lerd root-level system setup
+  ansible.builtin.command: "{{ user_home }}/.local/bin/lerd bootstrap --system --user {{ user_name }}"
+  args:
+    creates: /etc/sysctl.d/99-lerd-ports.conf
+
+- name: Run lerd install unattended (.test domains with HTTPS)
+  become: false
+  ansible.builtin.command: "{{ user_home }}/.local/bin/lerd install --unattended --dns managed"
+  args:
+    creates: "{{ user_home }}/.local/share/lerd/installed-version"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ lookup('ansible.builtin.pipe', 'id -u') }}"
+  register: lerd_install
+
+- name: Trust the lerd CA in the system store
+  ansible.builtin.command: "{{ user_home }}/.local/bin/lerd bootstrap --trust-ca --user {{ user_name }}"
+  when: lerd_install is changed
+
+# lerd MCP stays per-project (lerd injects it when a site is linked), so make
+# sure install left no global registration telling every repo it runs on lerd.
+- name: Keep lerd MCP out of the global AI assistant config
+  become: false
+  ansible.builtin.command: "{{ user_home }}/.local/bin/lerd mcp:disable-global"
+  when: lerd_install is changed
+
+- name: Install the lerd desktop app
+  become: false
+  ansible.builtin.command: flatpak install --user --noninteractive https://lerd.sh/lerd.flatpakref
+  args:
+    creates: "{{ user_home }}/.local/share/flatpak/app/sh.lerd.Desktop"

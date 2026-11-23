@@ -109,3 +109,7 @@
   register: fnm_node
   changed_when: "'Installing' in fnm_node.stdout"
   failed_when: false
+
+- name: Set up lerd
+  ansible.builtin.import_tasks: lerd.yml
+  when: ansible_facts['architecture'] == 'x86_64'
