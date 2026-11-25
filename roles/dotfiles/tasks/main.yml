@@ -28,6 +28,24 @@
       Host *
         IdentityAgent ~/.1password/agent.sock
 
+# 1Password's documented macOS setup: link its sandboxed socket to the same
+# path Linux uses, so the ssh config above works unchanged on both.
+- name: Link the 1Password agent socket (macOS)
+  when: ansible_facts['os_family'] == 'Darwin'
+  block:
+    - name: Ensure ~/.1password exists
+      ansible.builtin.file:
+        path: "{{ user_home }}/.1password"
+        state: directory
+        mode: '0700'
+
+    - name: Link ~/.1password/agent.sock to the 1Password group container
+      ansible.builtin.file:
+        src: "{{ user_home }}/Library/Group Containers/2BUAJ9TC9H.com.1password/t/agent.sock"
+        dest: "{{ user_home }}/.1password/agent.sock"
+        state: link
+        force: true
+
 # gnome-keyring also ships an ssh-agent and wins $SSH_AUTH_SOCK, so anything
 # reading the env var (rather than ssh_config) talks to the wrong agent.
 - name: Disable the gnome-keyring ssh agent
@@ -39,6 +57,7 @@
       Name=SSH Key Agent
       Hidden=true
     mode: '0644'
+  when: ansible_facts['os_family'] != 'Darwin'
 
 - name: Mask the gcr ssh-agent units
   become: false
@@ -51,6 +70,7 @@
     - gcr-ssh-agent.socket
     - gcr-ssh-agent.service
   failed_when: false
+  when: ansible_facts['os_family'] != 'Darwin'
 
 - name: Export the 1Password agent socket for the session
   ansible.builtin.lineinfile:
@@ -59,6 +79,7 @@
     mode: '0644'
     line: "SSH_AUTH_SOCK=${HOME}/.1password/agent.sock"
     regexp: '^SSH_AUTH_SOCK='
+  when: ansible_facts['os_family'] != 'Darwin'
 
 # --- Dotfiles -----------------------------------------------------------
 - name: Check whether SSH auth to GitHub works
