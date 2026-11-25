@@ -79,3 +79,35 @@
           - "7. Install Vicinae extensions from the checklist in README.md"
           - "   (Launcher > Extensions) - no CLI for this exists yet."
           - "8. If you have an IR camera for face unlock, enroll your face: gaze add-face <name>, then sudo gaze keyring"
+
+# Homebrew refuses to run as root, so this play runs as the login user and
+# individual tasks opt into become. Run it WITHOUT --ask-become-pass: the macos
+# role prompts once and reuses the password for sudo and for casks that need it.
+- name: Configure macOS Workstation
+  hosts: os_Darwin
+  connection: local
+  become: false
+
+  roles:
+    - role: macos
+      tags: ['macos', 'apps', 'desktop']
+    - role: development
+      tags: ['dev', 'development']
+    - role: dotfiles
+      tags: ['dotfiles']
+
+  post_tasks:
+    - name: Manual follow-up steps
+      ansible.builtin.debug:
+        msg:
+          - "Provisioning complete."
+          - "1. Sign in to 1Password, enable Settings > Developer > SSH agent, then:  op plugin init gh"
+          - "2. Authenticate Coder:  coder login {{ coder_url }}"
+          - "3. Open Herd once to finish its setup (it adds php/composer to ~/Library/Application Support/Herd/bin)."
+          - "4. Open Podman Desktop and start the Podman machine."
+          - "5. Raycast: set its hotkey to Cmd+Space (Spotlight's is disabled), clipboard history"
+          - "   to Cmd+Shift+V, and import snippets (see README 'macOS > Raycast')."
+          - "6. iTerm2: Settings > Profiles shows the managed 'Catppuccin' profile as default."
+          - "7. External PC keyboard: System Settings > Keyboard > Keyboard Shortcuts > Modifier Keys"
+          - "   if you want Alt/Win swapped (by default Win = Cmd, Alt = Option)."
+          - "8. If FileVault was reported off above, turn it on in System Settings > Privacy & Security."
