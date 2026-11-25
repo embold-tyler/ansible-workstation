@@ -1,0 +1,208 @@
+---
+# Runs as the login user (Homebrew refuses root). Tasks that need root set
+# `become: true` and use the password collected below.
+
+# --- sudo password ------------------------------------------------------
+# -K's password is not exposed as a variable, and some casks (.pkg installers)
+# need one for their own sudo, so collect it once and use it for both.
+- name: Ask for the macOS login password
+  ansible.builtin.pause:
+    prompt: "macOS login password (for sudo and .pkg casks)"
+    echo: false
+  register: macos_password_prompt
+  when: ansible_become_password is not defined
+  no_log: true
+  tags: ['always']
+
+- name: Use the password for become
+  ansible.builtin.set_fact:
+    ansible_become_password: "{{ macos_password_prompt.user_input }}"
+  when: ansible_become_password is not defined
+  no_log: true
+  tags: ['always']
+
+# --- Homebrew -----------------------------------------------------------
+- name: Check for Homebrew
+  ansible.builtin.stat:
+    path: "{{ homebrew_prefix }}/bin/brew"
+  register: brew_bin
+
+- name: Require Homebrew
+  ansible.builtin.assert:
+    that: brew_bin.stat.exists
+    fail_msg: "Homebrew is missing from {{ homebrew_prefix }}. Follow the macOS bootstrap in README.md first."
+
+- name: Update Homebrew and upgrade installed formulae
+  community.general.homebrew:
+    path: "{{ homebrew_prefix }}/bin"
+    update_homebrew: true
+    upgrade_all: true
+  tags: ['upgrade']
+
+- name: Install base CLI packages
+  community.general.homebrew:
+    name: "{{ packages_base_macos }}"
+    path: "{{ homebrew_prefix }}/bin"
+    state: present
+
+- name: Install apps
+  community.general.homebrew_cask:
+    name: "{{ macos_casks }}"
+    path: "{{ homebrew_prefix }}/bin"
+    state: present
+    sudo_password: "{{ ansible_become_password }}"
+
+# --- Apps with no cask --------------------------------------------------
+- name: Check which download-only apps are installed
+  ansible.builtin.stat:
+    path: "/Applications/{{ item.app }}"
+  loop: "{{ macos_download_apps }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: download_apps
+
+# ditto/hdiutil rather than unarchive: .app bundles carry symlinks and
+# extended attributes that a plain unzip can mangle.
+- name: Install download-only apps
+  ansible.builtin.shell: |
+    set -euo pipefail
+    work=$(mktemp -d)
+    trap 'rm -rf "$work"' EXIT
+    curl -fsSL -o "$work/pkg" "{{ item.item.url }}"
+    {% if item.item.url is search('\.dmg$') %}
+    mnt="$work/mnt"
+    hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$work/pkg" >/dev/null
+    ditto "$mnt/{{ item.item.app }}" "/Applications/{{ item.item.app }}"
+    hdiutil detach "$mnt" >/dev/null
+    {% else %}
+    ditto -x -k "$work/pkg" /Applications
+    {% endif %}
+  args:
+    executable: /bin/bash
+  loop: "{{ download_apps.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: not item.stat.exists
+
+# --- Security -----------------------------------------------------------
+# sudo_local survives macOS updates (unlike editing /etc/pam.d/sudo), and
+# replaces the fingerprint authselect setup on Fedora.
+- name: Allow Touch ID for sudo
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/pam.d/sudo_local
+    content: |
+      # Managed by ansible-workstation.
+      auth       sufficient     pam_tid.so
+    owner: root
+    group: wheel
+    mode: '0444'
+
+- name: Check FileVault
+  ansible.builtin.command: fdesetup status
+  register: filevault
+  changed_when: false
+
+- name: Warn when FileVault is off
+  ansible.builtin.debug:
+    msg: "FileVault is OFF. Turn it on in System Settings > Privacy & Security > FileVault."
+  when: "'FileVault is On' not in filevault.stdout"
+
+# --- Appearance and shortcuts -------------------------------------------
+# Replaces Night Theme Switcher: light by day, dark by night.
+- name: Switch light/dark appearance automatically
+  community.general.osx_defaults:
+    domain: NSGlobalDomain
+    key: AppleInterfaceStyleSwitchesAutomatically
+    type: bool
+    value: true
+
+- name: Read current symbolic hotkeys
+  ansible.builtin.command: >-
+    plutil -extract AppleSymbolicHotKeys.{{ item.id }} json -o -
+    {{ user_home }}/Library/Preferences/com.apple.symbolichotkeys.plist
+  loop: "{{ macos_symbolic_hotkeys }}"
+  loop_control:
+    label: "{{ item.id }}"
+  register: hotkeys_current
+  changed_when: false
+  failed_when: false
+
+- name: Set symbolic hotkeys
+  ansible.builtin.command:
+    argv:
+      - defaults
+      - write
+      - com.apple.symbolichotkeys
+      - AppleSymbolicHotKeys
+      - -dict-add
+      - "{{ item.item.id }}"
+      - >-
+        <dict><key>enabled</key><{{ item.item.enabled | ternary('true', 'false') }}/>
+        <key>value</key><dict><key>type</key><string>standard</string>
+        <key>parameters</key><array>{% for p in item.item.parameters %}<integer>{{ p }}</integer>{% endfor %}</array>
+        </dict></dict>
+  loop: "{{ hotkeys_current.results }}"
+  loop_control:
+    label: "{{ item.item.id }}"
+  when: >-
+    item.rc != 0 or
+    (item.stdout | from_json) != {'enabled': item.item.enabled,
+      'value': {'type': 'standard', 'parameters': item.item.parameters}}
+  register: hotkeys_set
+
+# Without this the new shortcuts only apply after logging out and back in.
+- name: Apply symbolic hotkeys now
+  ansible.builtin.command: /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+  when: hotkeys_set is changed
+  changed_when: true
+  failed_when: false
+
+# --- iTerm2 -------------------------------------------------------------
+- name: Ensure the iTerm2 dynamic profiles directory exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/Library/Application Support/iTerm2/DynamicProfiles"
+    state: directory
+    mode: '0755'
+
+- name: Install the Catppuccin iTerm2 profile
+  ansible.builtin.template:
+    src: iterm-catppuccin.json.j2
+    dest: "{{ user_home }}/Library/Application Support/iTerm2/DynamicProfiles/catppuccin.json"
+    mode: '0644'
+
+- name: Make the Catppuccin profile the iTerm2 default
+  community.general.osx_defaults:
+    domain: com.googlecode.iterm2
+    key: Default Bookmark Guid
+    type: string
+    value: "{{ iterm_profile_guid }}"
+
+# --- Dock ---------------------------------------------------------------
+- name: Read current Dock apps
+  ansible.builtin.shell: >-
+    set -o pipefail;
+    {{ homebrew_prefix }}/bin/dockutil --list | awk -F'\t' '$3 == "persistentApps"'
+  args:
+    executable: /bin/bash
+  register: dock_current
+  changed_when: false
+
+# Rebuild the apps side only; `--remove all` would also clear Downloads etc.
+# dockutil lists label, file:// URL, section; compare on the decoded path.
+- name: Set Dock apps
+  ansible.builtin.shell: |
+    set -euo pipefail
+    dockutil={{ homebrew_prefix }}/bin/dockutil
+    {% for line in dock_current.stdout_lines %}
+    $dockutil --remove {{ line.split('\t')[0] | quote }} --no-restart
+    {% endfor %}
+    {% for app in macos_dock_apps %}
+    [[ -e "{{ app }}" ]] && $dockutil --add "{{ app }}" --no-restart
+    {% endfor %}
+    killall Dock
+  args:
+    executable: /bin/bash
+  when: >-
+    dock_current.stdout_lines | map('split', '\t') | map(attribute=1) | map('urldecode') | map('regex_replace', '^file://(.*?)/?$', '\1') | list
+    != macos_dock_apps | select('exists') | list
