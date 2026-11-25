@@ -1,14 +1,27 @@
 ---
-- name: Configure Linux Workstation (Fedora primary, Ubuntu best-effort)
+# Sort localhost into os_<family> so each play below only runs on its own OS.
+- name: Detect operating system
   hosts: localhost
+  connection: local
+  gather_facts: true
+  # always: a --tags run would otherwise skip the grouping and match no play.
+  tags: ['always']
+  tasks:
+    - name: Fail early on unsupported OS family
+      ansible.builtin.assert:
+        that: ansible_facts['os_family'] in ['RedHat', 'Debian', 'Darwin']
+        fail_msg: "Only Fedora, Ubuntu (best-effort) and macOS are supported."
+
+    - name: Group by OS family
+      ansible.builtin.group_by:
+        key: "os_{{ ansible_facts['os_family'] }}"
+
+- name: Configure Linux Workstation (Fedora primary, Ubuntu best-effort)
+  hosts: os_RedHat:os_Debian
   connection: local
   become: true
 
   pre_tasks:
-    - name: Fail early on unsupported OS family
-      ansible.builtin.assert:
-        that: ansible_facts['os_family'] in ['RedHat', 'Debian']
-        fail_msg: "Only RedHat (Fedora) and Debian (Ubuntu) families are supported."
 
     - name: Speed up dnf (Fedora)
       ansible.builtin.lineinfile:
