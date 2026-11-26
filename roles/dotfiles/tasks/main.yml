@@ -41,7 +41,7 @@
 
     - name: Link ~/.1password/agent.sock to the 1Password group container
       ansible.builtin.file:
-        src: "{{ user_home }}/Library/Group Containers/2BUAJ9TC9H.com.1password/t/agent.sock"
+        src: "{{ user_home }}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
         dest: "{{ user_home }}/.1password/agent.sock"
         state: link
         force: true

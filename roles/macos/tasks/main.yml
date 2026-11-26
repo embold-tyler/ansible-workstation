@@ -185,27 +185,28 @@
 - name: Read current Dock apps
   ansible.builtin.shell: >-
     set -o pipefail;
-    {{ homebrew_prefix }}/bin/dockutil --list | awk -F'\t' '$3 == "persistentApps"'
+    {{ homebrew_prefix }}/bin/dockutil --list | awk -F'\t' '$3 == "persistentApps" {print $2}'
   args:
     executable: /bin/bash
   register: dock_current
   changed_when: false
 
 # Rebuild the apps side only; `--remove all` would also clear Downloads etc.
-# dockutil lists label, file:// URL, section; compare on the decoded path.
+# Labels are split out in the shell: a '\t' inside Jinja is not a tab.
 - name: Set Dock apps
   ansible.builtin.shell: |
     set -euo pipefail
     dockutil={{ homebrew_prefix }}/bin/dockutil
-    {% for line in dock_current.stdout_lines %}
-    $dockutil --remove {{ line.split('\t')[0] | quote }} --no-restart
-    {% endfor %}
+    labels=$($dockutil --list | awk -F'\t' '$3 == "persistentApps" {print $1}')
+    while IFS= read -r label; do
+      if [[ -n "$label" ]]; then $dockutil --remove "$label" --no-restart; fi
+    done <<< "$labels"
     {% for app in macos_dock_apps %}
-    [[ -e "{{ app }}" ]] && $dockutil --add "{{ app }}" --no-restart
+    if [[ -e {{ app | quote }} ]]; then $dockutil --add {{ app | quote }} --no-restart; fi
     {% endfor %}
     killall Dock
   args:
     executable: /bin/bash
   when: >-
-    dock_current.stdout_lines | map('split', '\t') | map(attribute=1) | map('urldecode') | map('regex_replace', '^file://(.*?)/?$', '\1') | list
+    dock_current.stdout_lines | map('urldecode') | map('regex_replace', '^file://(.*?)/?$', '\1') | list
     != macos_dock_apps | select('exists') | list
