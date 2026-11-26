@@ -1,7 +1,8 @@
 # ansible-workstation
 
 Provisions this workstation (Gigabyte AERO 17 KC, Fedora Workstation 44, GNOME,
-dual-booting Windows). Fedora is the tested path; Ubuntu branches are kept from
+dual-booting Windows) and, through a separate play, a MacBook (see
+[macOS](#macos)). Fedora is the tested path; Ubuntu branches are kept from
 the original playbook but are **untested** — package names there have not been
 verified against live repos the way the Fedora ones have.
 
@@ -18,6 +19,62 @@ Useful tags: `repos`, `base`, `hardware`, `apps`, `dev`, `dotfiles`, `upgrade`.
 # skip the full system upgrade on a re-run
 ansible-playbook playbook.yml --ask-become-pass --skip-tags upgrade
 ```
+
+## macOS
+
+A separate play (`os_Darwin`) runs the `macos`, `development` and `dotfiles`
+roles. The Linux play is unchanged. It is written for Apple Silicon and has not
+yet been run on a real Mac.
+
+Bootstrap on a fresh Mac:
+
+```bash
+xcode-select --install          # git, python3, compilers
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+eval "$(/opt/homebrew/bin/brew shellenv)"
+brew install ansible
+git clone https://github.com/embold-tyler/ansible-workstation.git && cd ansible-workstation
+ansible-galaxy install -r requirements.yml
+ansible-playbook playbook.yml   # no --ask-become-pass: the macos role asks once
+```
+
+Homebrew refuses to run as root, so the play runs as you and the `macos` role
+prompts for your login password once. It uses that for `sudo` tasks and for
+casks that ship a `.pkg`.
+
+What replaces what:
+
+| Fedora | macOS |
+| --- | --- |
+| dnf, Flatpak | Homebrew formulae and casks (`packages_*_macos`, `macos_casks`) |
+| Ptyxis | iTerm2, with a Catppuccin profile generated from the Ptyxis palette |
+| Vicinae, Emoji Copy, Caffeine, espanso | Raycast |
+| Tiling Assistant | built-in tiling (double-click a window's top edge for full height) |
+| lerd | Herd |
+| Podman | Podman and Podman Desktop |
+| Fingerprint, Gaze | Touch ID, also for `sudo` (`/etc/pam.d/sudo_local`) |
+| LUKS and TPM | FileVault (the play warns if it is off) |
+| Night Theme Switcher | Appearance: Auto |
+| Remmina, FileZilla, Curtail, Upscaler | Windows App, Cyberduck, ImageOptim, Upscayl |
+| Betterbird, Okular, gThumb, Kooha, Pika | Apple Mail, Preview, Cmd+Shift+5, Time Machine |
+| GSConnect, RQuickShare | none (Pixel Quick Share works with AirDrop) |
+
+Workspace switching is Ctrl+Cmd+Left/Right, which is the same physical chord as
+Ctrl+Super on a PC keyboard (Win maps to Cmd). Spotlight's Cmd+Space is turned
+off so Raycast can take it. macOS has no shortcut for moving a window to another
+workspace; drag it instead.
+
+### Raycast
+
+Raycast keeps its settings in its own database, so these are manual:
+
+- Hotkey: Cmd+Space.
+- Clipboard History: Cmd+Shift+V (Cmd+V is paste on a Mac, so Super+V can't carry over).
+- Switch Windows: Option+Tab, for GNOME's Alt+Tab window switcher.
+- Snippets: Raycast > Import Snippets, using a JSON file converted from espanso.
+  Static snippets convert directly. Ones that used espanso `vars` (dates, shell
+  output, forms) need re-creating with Raycast placeholders such as `{date}`
+  and `{clipboard}`.
 
 ## Why the previous run died
 

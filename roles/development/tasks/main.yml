@@ -13,6 +13,13 @@
     update_cache: true
   when: ansible_facts['os_family'] == 'Debian'
 
+- name: Install development packages (macOS)
+  community.general.homebrew:
+    name: "{{ packages_dev_macos }}"
+    path: "{{ homebrew_prefix }}/bin"
+    state: present
+  when: ansible_facts['os_family'] == 'Darwin'
+
 # --- cloudflared --------------------------------------------------------
 - name: Install cloudflared (Fedora)
   ansible.builtin.dnf:
@@ -28,8 +35,13 @@
   when: ansible_facts['os_family'] == 'Debian'
 
 # --- Coder CLI (system-wide, needs root) --------------------------------
+# On macOS the script would pick Homebrew's coder, whose version can drift
+# from the server's; standalone pins it to what the server ships.
 - name: Install Coder CLI
-  ansible.builtin.shell: "curl -fsSL {{ coder_url }}/install.sh | sh"
+  become: true
+  ansible.builtin.shell: >-
+    curl -fsSL {{ coder_url }}/install.sh | sh
+    {%- if ansible_facts['os_family'] == 'Darwin' %} -s -- --method standalone{% endif %}
   args:
     creates: /usr/local/bin/coder
 
@@ -65,6 +77,8 @@
       creates: "{{ user_home }}/.local/bin/agy"
   loop_control:
     label: "{{ item.name }}"
+  # fnm's installer defers to Homebrew on macOS, so it comes from packages_dev_macos there.
+  when: item.name != 'fnm' or ansible_facts['os_family'] != 'Darwin'
 
 # --- Portainer MCP -----------------------------------------------------
 # Ships as an .mcpb bundle (a zip); the server binary is self-contained.
@@ -74,16 +88,16 @@
     path: "{{ user_home }}/.local/share/portainer-mcp-{{ portainer_mcp_version }}"
     state: directory
     mode: '0755'
-  when: ansible_facts['architecture'] == 'x86_64'
+  when: portainer_mcp_platform | length > 0
 
 - name: Unpack portainer-mcp {{ portainer_mcp_version }}
   become: false
   ansible.builtin.unarchive:
-    src: "https://github.com/portainer/portainer-mcp/releases/download/{{ portainer_mcp_version }}/portainer-mcp-{{ portainer_mcp_version }}-linux-x64.mcpb"
+    src: "https://github.com/portainer/portainer-mcp/releases/download/{{ portainer_mcp_version }}/portainer-mcp-{{ portainer_mcp_version }}-{{ portainer_mcp_platform }}.mcpb"
     dest: "{{ user_home }}/.local/share/portainer-mcp-{{ portainer_mcp_version }}"
     remote_src: true
     creates: "{{ user_home }}/.local/share/portainer-mcp-{{ portainer_mcp_version }}/server/portainer-mcp"
-  when: ansible_facts['architecture'] == 'x86_64'
+  when: portainer_mcp_platform | length > 0
 
 - name: Link portainer-mcp into ~/.local/bin
   become: false
@@ -92,7 +106,7 @@
     dest: "{{ user_home }}/.local/bin/portainer-mcp"
     state: link
     force: true
-  when: ansible_facts['architecture'] == 'x86_64'
+  when: portainer_mcp_platform | length > 0
 
 # --- Node toolchain -----------------------------------------------------
 # F44 has no plain `nodejs` package (only nodejs22/nodejs24), and this box
@@ -100,7 +114,7 @@
 - name: Install Node LTS via fnm
   become: false
   ansible.builtin.shell: |
-    export PATH="{{ user_home }}/.local/share/fnm:$PATH"
+    export PATH="{{ user_home }}/.local/share/fnm:{{ homebrew_prefix }}/bin:$PATH"
     eval "$(fnm env --shell bash)"
     fnm install --lts
     fnm default lts-latest
@@ -110,6 +124,9 @@
   changed_when: "'Installing' in fnm_node.stdout"
   failed_when: false
 
+# macOS uses Herd (a cask in the macos role) instead.
 - name: Set up lerd
   ansible.builtin.import_tasks: lerd.yml
-  when: ansible_facts['architecture'] == 'x86_64'
+  when:
+    - ansible_facts['os_family'] != 'Darwin'
+    - ansible_facts['architecture'] == 'x86_64'

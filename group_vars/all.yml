@@ -156,6 +156,9 @@ screamingfrog_version: "24.3-1"
 # Pinned so the MCP config in dotfiles (env var names) can't silently drift
 # from the binary. Releases: https://github.com/portainer/portainer-mcp/releases
 portainer_mcp_version: "2.45.1"
+# Release asset suffix for this machine; empty skips the install.
+portainer_mcp_platform: >-
+  {{ {'Darwin-arm64': 'darwin-arm64', 'Linux-x86_64': 'linux-x64'}.get(ansible_facts['system'] ~ '-' ~ ansible_facts['architecture'], '') }}
 
 # lerd (Podman-based PHP environment). Releases: https://github.com/lerd-env/lerd/releases
 # After first install, `lerd update` keeps it current; this only seeds new machines.
@@ -290,3 +293,113 @@ luks_tpm2_pcrs: "7"
 # USB vendor:product, not a port path, so the camera survives moving between
 # the dock and the laptop. Gaze picks the colour and IR nodes from it.
 gaze_camera_usb_id: "046d:085e"  # Logitech BRIO
+
+# --- macOS ----------------------------------------------------------------
+# Apple Silicon prefix. Homebrew (and so Ansible) must already be installed,
+# see README "macOS".
+homebrew_prefix: "/opt/homebrew"
+
+# packages_base_fedora minus what macOS ships (curl, zsh) or has no use for
+# (snapper, util-linux, wl-clipboard/xclip: pbcopy/pbpaste are built in).
+packages_base_macos:
+  - bat
+  - btop
+  - chezmoi
+  - direnv
+  - dockutil
+  - eza
+  - fastfetch
+  - fd
+  - fzf
+  - git
+  - git-delta
+  - htop
+  - jq
+  - just
+  - ncdu
+  - openvpn
+  - pandoc
+  - ripgrep
+  - sevenzip
+  - tealdeer
+  - tmux
+  - vim
+  - wget
+  - zoxide
+
+# No php/composer: Herd ships both. No nss-tools: that was for lerd's CA.
+packages_dev_macos:
+  - cloudflared
+  - fnm
+  - gh
+  - go
+  - lazygit
+  - podman
+  - podman-compose
+  - shfmt
+
+# Linux app → Mac equivalent where the name differs:
+#   Ptyxis → iterm2, Vicinae/Emoji Copy/Caffeine/espanso → raycast,
+#   lerd → herd, Remmina → windows-app, FileZilla → cyberduck,
+#   Curtail → imageoptim, Upscaler → upscayl. Dropped (built in or not needed):
+#   Betterbird (Apple Mail), Kooha (Cmd+Shift+5), Okular/gThumb (Preview),
+#   Pika Backup (Time Machine), GSConnect/RQuickShare (Quick Share ↔ AirDrop).
+# No 1password: it is installed by hand before the play (SSH to GitHub needs it),
+# updates itself, and macOS blocks brew from adopting it.
+macos_casks:
+  - 1password-cli
+  - balenaetcher
+  - claude
+  - clickup
+  - cloudflare-warp
+  - cyberduck
+  - firefox
+  - font-fira-code-nerd-font
+  - gimp
+  - google-chrome
+  - handbrake-app
+  - herd
+  - imageoptim
+  - iterm2
+  - libreoffice
+  - lm-studio
+  - podman-desktop
+  - raycast
+  - screaming-frog-seo-spider
+  - slack
+  - tailscale-app
+  - upscayl
+  - visual-studio-code
+  - vlc
+  - windows-app
+
+# Apps with no Homebrew cask. Both self-update after the first install.
+macos_download_apps:
+  - { name: Keito,    app: Keito.app,    url: "https://github.com/osodevops/keito-desktop-releases/releases/latest/download/Keito-universal.dmg" }
+  - { name: Rustable, app: Rustable.app, url: "https://github.com/RustableApp/Rustable/releases/latest/download/Rustable-macos-arm64.zip" }
+
+# Dock pin order, mirroring gnome_favorite_apps. Finder is always first.
+macos_dock_apps:
+  - /Applications/iTerm.app
+  - /Applications/Firefox.app
+  - /Applications/Google Chrome.app
+  - /Applications/Slack.app
+  - /Applications/Visual Studio Code.app
+  - /Applications/LM Studio.app
+  - /System/Applications/Calendar.app
+  - /Applications/1Password.app
+  - /System/Applications/App Store.app
+
+# Workspace (Space) switching to match Ctrl+Super+Left/Right on GNOME. A PC
+# keyboard's Win key is Cmd on macOS, so this is the same physical chord.
+# ids: 79/81 = move left/right a space, 64 = Spotlight (freed for Raycast).
+# parameters: (char, keycode, modifier mask); 123/124 = Left/Right arrow,
+# 9699328 = Ctrl + Cmd + function-key flag.
+macos_symbolic_hotkeys:
+  - { id: 79, enabled: true,  parameters: [65535, 123, 9699328] }
+  - { id: 81, enabled: true,  parameters: [65535, 124, 9699328] }
+  - { id: 64, enabled: false, parameters: [32, 49, 1048576] }
+
+# Ptyxis was 10.5pt on GNOME; macOS points render smaller.
+iterm_font: "FiraCodeNFM-Reg 13"
+iterm_profile_guid: "045D4175-6D70-4506-8729-48EC8A1F77AB"

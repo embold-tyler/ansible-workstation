@@ -1,0 +1,25 @@
+{#- Colours come from the Ptyxis palette so both terminals share one source. -#}
+{%- set palette = role_path ~ '/../desktop/files/ptyxis-catppuccin.palette' -%}
+{%- set keys = {'Background': 'Background Color', 'Foreground': 'Foreground Color', 'Cursor': 'Cursor Color'} -%}
+{%- for n in range(16) %}{% set _ = keys.update({'Color' ~ n: 'Ansi ' ~ n ~ ' Color'}) %}{% endfor -%}
+{%- set ns = namespace(entries=[]) -%}
+{%- for mode in ['Light', 'Dark'] -%}
+{%- for src, dest in keys.items() -%}
+{%- set hex = lookup('ansible.builtin.ini', src, section=mode, file=palette) -%}
+{%- set ns.entries = ns.entries + [(dest ~ ' (' ~ mode ~ ')', {
+  'Red Component': (hex[1:3] | int(base=16)) / 255,
+  'Green Component': (hex[3:5] | int(base=16)) / 255,
+  'Blue Component': (hex[5:7] | int(base=16)) / 255,
+  'Alpha Component': 1,
+  'Color Space': 'sRGB'})] -%}
+{%- endfor -%}
+{%- endfor -%}
+{%- set profile = {
+  'Name': 'Catppuccin',
+  'Guid': iterm_profile_guid,
+  'Normal Font': iterm_font,
+  'Columns': 125,
+  'Rows': 38,
+  'Use Separate Colors for Light and Dark Mode': true,
+} | combine(dict(ns.entries)) -%}
+{{ {'Profiles': [profile]} | to_nice_json }}
