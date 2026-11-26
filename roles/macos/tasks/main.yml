@@ -45,11 +45,14 @@
     path: "{{ homebrew_prefix }}/bin"
     state: present
 
+# adopt: take over apps installed by hand before the play ran (1Password has to
+# come first so SSH to GitHub works) instead of failing on the existing .app.
 - name: Install apps
   community.general.homebrew_cask:
     name: "{{ macos_casks }}"
     path: "{{ homebrew_prefix }}/bin"
     state: present
+    install_options: ['adopt']
     sudo_password: "{{ ansible_become_password }}"
 
 # --- Apps with no cask --------------------------------------------------
