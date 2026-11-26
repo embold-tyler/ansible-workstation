@@ -75,36 +75,26 @@
 - name: Ubuntu third-party repositories
   when: ansible_facts['os_family'] == 'Debian'
   block:
-    - name: Ensure keyring directory exists
-      ansible.builtin.file:
-        path: /usr/share/keyrings
-        state: directory
-        mode: '0755'
-
-    - name: Add apt signing keys
-      ansible.builtin.get_url:
-        url: "{{ item.url }}"
-        dest: "{{ item.dest }}"
-        mode: '0644'
-      loop:
-        - { url: 'https://packages.microsoft.com/keys/microsoft.asc', dest: '/etc/apt/trusted.gpg.d/microsoft.asc' }
-        - { url: 'https://cli.github.com/packages/githubcli-archive-keyring.asc', dest: '/etc/apt/trusted.gpg.d/githubcli.asc' }
-        - { url: 'https://dl.google.com/linux/linux_signing_key.pub', dest: '/etc/apt/trusted.gpg.d/google-chrome.asc' }
-        - { url: 'https://downloads.1password.com/linux/keys/1password.asc', dest: '/etc/apt/trusted.gpg.d/1password.asc' }
-        - { url: 'https://apt.fury.io/wez/gpg.key', dest: '/etc/apt/trusted.gpg.d/wezterm.asc' }
-      loop_control:
-        label: "{{ item.dest | basename }}"
+    # deb822_repository needs python3-debian, and downloads each signed_by key itself.
+    - name: Install python3-debian
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
 
     - name: Add apt repositories
-      ansible.builtin.apt_repository:
-        repo: "{{ item.repo }}"
-        filename: "{{ item.file }}"
-        state: present
+      ansible.builtin.deb822_repository:
+        name: "{{ item.name }}"
+        types: deb
+        uris: "{{ item.uri }}"
+        suites: "{{ item.suite }}"
+        components: "{{ item.components }}"
+        architectures: amd64
+        signed_by: "{{ item.key }}"
       loop:
-        - { repo: 'deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main', file: 'vscode' }
-        - { repo: 'deb [arch=amd64] https://cli.github.com/packages stable main', file: 'github-cli' }
-        - { repo: 'deb [arch=amd64] https://dl.google.com/linux/chrome/deb/ stable main', file: 'google-chrome' }
-        - { repo: 'deb [arch=amd64] https://downloads.1password.com/linux/debian/amd64 stable main', file: '1password' }
-        - { repo: 'deb [arch=amd64] https://apt.fury.io/wez/ * *', file: 'wezterm' }
+        - { name: vscode, uri: 'https://packages.microsoft.com/repos/vscode', suite: stable, components: main, key: 'https://packages.microsoft.com/keys/microsoft.asc' }
+        - { name: github-cli, uri: 'https://cli.github.com/packages', suite: stable, components: main, key: 'https://cli.github.com/packages/githubcli-archive-keyring.asc' }
+        - { name: google-chrome, uri: 'https://dl.google.com/linux/chrome/deb/', suite: stable, components: main, key: 'https://dl.google.com/linux/linux_signing_key.pub' }
+        - { name: 1password, uri: 'https://downloads.1password.com/linux/debian/amd64', suite: stable, components: main, key: 'https://downloads.1password.com/linux/keys/1password.asc' }
+        - { name: wezterm, uri: 'https://apt.fury.io/wez/', suite: '*', components: '*', key: 'https://apt.fury.io/wez/gpg.key' }
       loop_control:
-        label: "{{ item.file }}"
+        label: "{{ item.name }}"
