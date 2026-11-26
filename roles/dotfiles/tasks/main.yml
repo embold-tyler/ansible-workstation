@@ -82,6 +82,14 @@
   when: ansible_facts['os_family'] != 'Darwin'
 
 # --- Dotfiles -----------------------------------------------------------
+# Clone GitHub over SSH (1Password agent) even when given an https URL, e.g. by
+# antidote. The account has no password login, so an https prompt can't succeed.
+- name: Rewrite GitHub https URLs to SSH
+  community.general.git_config:
+    name: url.git@github.com:.insteadOf
+    value: https://github.com/
+    scope: global
+
 - name: Check whether SSH auth to GitHub works
   ansible.builtin.command: ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -T git@github.com
   register: gh_ssh
@@ -99,7 +107,7 @@
 - name: Apply dotfiles via coder
   ansible.builtin.command: "coder dotfiles -y {{ dotfiles_repo }}"
   args:
-    creates: "{{ user_home }}/.config/coderv2/dotfiles"
+    creates: "{{ user_home }}/{{ 'Library/Application Support' if ansible_facts['os_family'] == 'Darwin' else '.config' }}/coderv2/dotfiles"
   when: "'successfully authenticated' in (gh_ssh.stderr | default(''))"
 
 - name: Re-apply chezmoi (picks up dotfiles changes on a re-run)

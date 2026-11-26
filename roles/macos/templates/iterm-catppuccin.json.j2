@@ -21,5 +21,6 @@
   'Columns': 125,
   'Rows': 38,
   'Use Separate Colors for Light and Dark Mode': true,
+  'Rewritable': false,
 } | combine(dict(ns.entries)) -%}
 {{ {'Profiles': [profile]} | to_nice_json }}
