@@ -35,6 +35,15 @@
   when: ansible_facts['os_family'] == 'Debian'
 
 # --- Coder CLI (system-wide, needs root) --------------------------------
+# On a fresh Mac /usr/local/bin may not exist yet, and whatever creates it
+# first can leave it root-only (seen as 0700), which hides coder from you.
+- name: Ensure /usr/local/bin is readable by everyone
+  become: true
+  ansible.builtin.file:
+    path: /usr/local/bin
+    state: directory
+    mode: '0755'
+
 # The deployment's install.sh always fetches the CLI matching the server.
 - name: Install Coder CLI
   become: true
