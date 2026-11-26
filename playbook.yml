@@ -110,4 +110,5 @@
           - "6. iTerm2: Settings > Profiles shows the managed 'Catppuccin' profile as default."
           - "7. External PC keyboard: System Settings > Keyboard > Keyboard Shortcuts > Modifier Keys"
           - "   if you want Alt/Win swapped (by default Win = Cmd, Alt = Option)."
-          - "8. If FileVault was reported off above, turn it on in System Settings > Privacy & Security."
+          - "8. Open Tailscale from the menu bar and sign in to join the tailnet."
+          - "9. If FileVault was reported off above, turn it on in System Settings > Privacy & Security."

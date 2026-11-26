@@ -93,7 +93,7 @@
     msg: >-
       SSH auth to github.com is not working, so dotfiles were skipped. Unlock
       1Password and enable its SSH agent, then re-run:
-      ansible-playbook playbook.yml --ask-become-pass --tags dotfiles
+      ansible-playbook playbook.yml --tags dotfiles{{ '' if ansible_facts['os_family'] == 'Darwin' else ' --ask-become-pass' }}
   when: "'successfully authenticated' not in (gh_ssh.stderr | default(''))"
 
 - name: Apply dotfiles via coder
