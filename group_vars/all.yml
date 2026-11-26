@@ -344,8 +344,9 @@ packages_dev_macos:
 #   Curtail → imageoptim, Upscaler → upscayl. Dropped (built in or not needed):
 #   Betterbird (Apple Mail), Kooha (Cmd+Shift+5), Okular/gThumb (Preview),
 #   Pika Backup (Time Machine), GSConnect/RQuickShare (Quick Share ↔ AirDrop).
+# No 1password: it is installed by hand before the play (SSH to GitHub needs it),
+# updates itself, and macOS blocks brew from adopting it.
 macos_casks:
-  - 1password
   - 1password-cli
   - balenaetcher
   - claude
