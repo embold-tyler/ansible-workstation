@@ -35,13 +35,10 @@
   when: ansible_facts['os_family'] == 'Debian'
 
 # --- Coder CLI (system-wide, needs root) --------------------------------
-# On macOS the script would pick Homebrew's coder, whose version can drift
-# from the server's; standalone pins it to what the server ships.
+# The deployment's install.sh always fetches the CLI matching the server.
 - name: Install Coder CLI
   become: true
-  ansible.builtin.shell: >-
-    curl -fsSL {{ coder_url }}/install.sh | sh
-    {%- if ansible_facts['os_family'] == 'Darwin' %} -s -- --method standalone{% endif %}
+  ansible.builtin.shell: curl -fsSL {{ coder_url }}/install.sh | sh
   args:
     creates: /usr/local/bin/coder
 
